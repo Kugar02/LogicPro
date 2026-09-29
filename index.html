@@ -292,43 +292,78 @@
                     recommendUI.style.color = '#FFD700';
                 }
 
-                // 2. 接收 PHP 的二維矩陣並畫出大路
-                if (data.cores_analysis && data.cores_analysis[0].matrix) {
-                    renderBigRoad(data.cores_analysis[0].matrix);
+                // 2. 接收 PHP 的二維矩陣並畫出四大路
+                if (data.cores_analysis) {
+                    // 畫大路
+                    if (data.cores_analysis[0].matrix) renderBigRoad(data.cores_analysis[0].matrix);
+                    // 畫大眼仔 (空心圈)
+                    if (data.cores_analysis[1].matrix) renderDerivedRoad(data.cores_analysis[1].matrix, 'big-eye-board', 'big-eye');
+                    // 畫小路 (實心圈)
+                    if (data.cores_analysis[2].matrix) renderDerivedRoad(data.cores_analysis[2].matrix, 'small-road-board', 'small');
+                    // 畫曱甴路 (斜線)
+                    if (data.cores_analysis[3].matrix) renderDerivedRoad(data.cores_analysis[3].matrix, 'roach-road-board', 'roach');
                 }
 
-            } catch (error) {
-                console.error("API 連線失敗:", error);
-                recommendUI.innerText = "連線失敗，請檢查 PHP 伺服器";
-                recommendUI.style.color = "var(--red-color)";
-            }
-        }
-
-        // 繪製大路 (Big Road) - 空心紅藍圈
+      // 繪製大路 (Big Road)
         function renderBigRoad(matrix) {
             document.querySelectorAll('#big-road-board td').forEach(td => td.innerHTML = '');
             const maxRows = 6; 
             let currentVisualCol = 0;
-
             for (let col = 0; col < matrix.length; col++) {
                 let rowLength = matrix[col].length;
                 let outcome = matrix[col][0]; 
+                let actualRow = 0;
+                for (let i = 0; i < rowLength; i++) {
+                    let renderCol = currentVisualCol;
+                    let renderRow = actualRow;
+                    if (renderRow >= maxRows) {
+                        renderRow = maxRows - 1; 
+                        renderCol += (actualRow - (maxRows - 1)); 
+                    }
+                    const cell = document.getElementById(`big-road-board-${renderRow}-${renderCol}`);
+                    if (cell) {
+                        let color = outcome === 'B' ? 'var(--red-color)' : 'var(--blue-color)';
+                        cell.innerHTML = `<div style="border: 2px solid ${color}; width: 14px; height: 14px; border-radius: 50%; margin: 0 auto;"></div>`;
+                    }
+                    actualRow++;
+                }
+                currentVisualCol++;
+            }
+        }
+
+        // 繪製下三路 (大眼仔、小路、曱甴路)
+        function renderDerivedRoad(matrix, elementId, styleType) {
+            document.querySelectorAll(`#${elementId} td`).forEach(td => td.innerHTML = '');
+            const maxRows = 6;
+            let currentVisualCol = 0;
+
+            for (let col = 0; col < matrix.length; col++) {
+                let rowLength = matrix[col].length;
+                let outcome = matrix[col][0]; // 下三路為 'R' (紅) 或 'B' (藍)
                 let actualRow = 0;
 
                 for (let i = 0; i < rowLength; i++) {
                     let renderCol = currentVisualCol;
                     let renderRow = actualRow;
-
-                    // 處理長龍「轉彎」邏輯 (超過底部則往右延伸)
                     if (renderRow >= maxRows) {
-                        renderRow = maxRows - 1; 
-                        renderCol += (actualRow - (maxRows - 1)); 
+                        renderRow = maxRows - 1;
+                        renderCol += (actualRow - (maxRows - 1));
                     }
 
-                    const cell = document.getElementById(`big-road-board-${renderRow}-${renderCol}`);
+                    const cell = document.getElementById(`${elementId}-${renderRow}-${renderCol}`);
                     if (cell) {
-                        if (outcome === 'B') cell.innerHTML = '<div style="border: 2px solid var(--red-color); width: 14px; height: 14px; border-radius: 50%; margin: 0 auto;"></div>';
-                        if (outcome === 'P') cell.innerHTML = '<div style="border: 2px solid var(--blue-color); width: 14px; height: 14px; border-radius: 50%; margin: 0 auto;"></div>';
+                        let color = outcome === 'R' ? 'var(--red-color)' : 'var(--blue-color)';
+                        let content = '';
+
+                        // 根據不同路單渲染不同符號
+                        if (styleType === 'big-eye') {
+                            content = `<div style="border: 2px solid ${color}; width: 10px; height: 10px; border-radius: 50%; margin: 0 auto;"></div>`; // 空心小圓
+                        } else if (styleType === 'small') {
+                            content = `<div style="background-color: ${color}; width: 12px; height: 12px; border-radius: 50%; margin: 0 auto;"></div>`; // 實心圓
+                        } else if (styleType === 'roach') {
+                            content = `<div style="color: ${color}; font-size: 16px; font-weight: bold; line-height: 1; transform: rotate(15deg);">/</div>`; // 斜線
+                        }
+                        cell.innerHTML = content;
                     }
                     actualRow++;
                 }
