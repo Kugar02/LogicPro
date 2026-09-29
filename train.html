@@ -26,7 +26,7 @@
         }
         .container {
             width: 100%;
-            max-width: 800px;
+            max-width: 900px;
             background: var(--panel-bg);
             padding: 30px;
             border-radius: 12px;
@@ -55,14 +55,14 @@
             border-radius: 8px;
             font-family: monospace;
             color: #10b981;
-            height: 300px;
+            height: 250px;
             overflow-y: auto;
             white-space: pre-wrap;
             border: 1px solid #333;
         }
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 15px;
             margin-top: 20px;
         }
@@ -73,15 +73,15 @@
             text-align: center;
             border: 1px solid rgba(255,255,255,0.05);
         }
-        .stat-name { color: #94a3b8; font-size: 0.9rem; margin-bottom: 5px; }
-        .stat-value { font-size: 1.5rem; font-weight: bold; color: var(--gold-color); }
+        .stat-name { color: #94a3b8; font-size: 0.95rem; margin-bottom: 5px; font-weight: bold;}
+        .stat-value { font-size: 1.8rem; font-weight: bold; color: var(--gold-color); }
     </style>
 </head>
 <body>
 
     <div class="container">
         <h1>🧠 Quantum AI 深度學習回測中心</h1>
-        <p style="text-align: center; color: #94a3b8;">從 Google Drive 讀取歷史牌靴，自動演化特徵權重</p>
+        <p style="text-align: center; color: #94a3b8;">從 Google Drive 讀取歷史牌靴，自動演化七大特徵權重</p>
         
         <button class="btn-train" onclick="startTraining()">啟動 AI 回測與權重優化</button>
         
@@ -107,54 +107,74 @@
                 const response = await fetch(gasUrl);
                 const data = await response.json();
                 
-                if (data.status !== 'success') {
-                    log(`讀取失敗: ${data.message}`);
-                    return;
-                }
-
+                if (data.status !== 'success') { log(`讀取失敗: ${data.message}`); return; }
                 const history = data.history;
-                if (!history || history.length === 0) {
-                    log("警告：目前沒有歷史數據！請先實戰並點擊「結算並新靴」。");
-                    return;
-                }
+                if (!history || history.length === 0) { log("警告：目前沒有歷史數據！請先到主程式輸入實戰牌靴。"); return; }
 
-                log(`成功載入 ${history.length} 靴歷史牌局。開始進行深度回測...`);
+                log(`成功載入 ${history.length} 靴歷史牌局。開始進行【七大特徵】深度回測...`);
                 runSimulation(history);
+            } catch (error) { log(`連線錯誤: ${error.message}`); }
+        }
 
-            } catch (error) {
-                log(`連線錯誤: ${error.message}`);
+        function buildMatrixLocal(seq) {
+            let matrix = []; let currentCol = -1; let lastResult = null;
+            for (let res of seq) {
+                if (res !== lastResult) { currentCol++; matrix[currentCol] = []; }
+                matrix[currentCol].push(res);
+                lastResult = res;
             }
+            return matrix;
         }
 
         function runSimulation(history) {
             let stats = {
-                'dragon': { name: '長龍順打', win: 0, total: 0 },
-                'jump': { name: '單跳反打', win: 0, total: 0 },
-                'aligned': { name: '齊頭反打', win: 0, total: 0 }
+                'dragon': { name: '長龍 (順打)', win: 0, total: 0 },
+                'jump': { name: '單跳 (反打)', win: 0, total: 0 },
+                'aligned': { name: '齊頭 (反打)', win: 0, total: 0 },
+                'doubleJump': { name: '雙跳 (反打)', win: 0, total: 0 },
+                'oneTwo': { name: '一房兩廳 (反打)', win: 0, total: 0 },
+                'shortRoad': { name: '短路密集 (反打)', win: 0, total: 0 },
+                'streakRule': { name: '逢X連 (順打)', win: 0, total: 0 }
             };
 
             history.forEach((shoe) => {
-                let currentStreak = 0;
-                let lastOutcome = '';
-                
-                for (let i = 0; i < shoe.length - 1; i++) {
-                    let outcome = shoe[i];
+                for (let i = 5; i < shoe.length - 1; i++) {
+                    let currentRecords = shoe.slice(0, i + 1);
                     let nextActual = shoe[i + 1];
+                    let matrix = buildMatrixLocal(currentRecords);
+                    let colCount = matrix.length;
+                    if (colCount < 2) continue;
 
-                    if (outcome === lastOutcome) currentStreak++;
-                    else { currentStreak = 1; lastOutcome = outcome; }
+                    let curLen = matrix[colCount - 1].length;
+                    let prevLen = matrix[colCount - 2].length;
+                    let outcome = matrix[colCount - 1][0];
 
-                    if (currentStreak >= 4) {
-                        stats.dragon.total++;
-                        if (nextActual === outcome) stats.dragon.win++;
+                    if (curLen >= 4) { stats.dragon.total++; if (nextActual === outcome) stats.dragon.win++; }
+                    if (colCount >= 4 && curLen === 1 && prevLen === 1 && matrix[colCount - 3].length === 1) { 
+                        stats.jump.total++; if (nextActual !== outcome) stats.jump.win++; 
                     }
-                    if (currentStreak === 1 && i >= 1 && shoe[i-1] !== outcome) {
-                        stats.jump.total++;
-                        if (nextActual !== outcome) stats.jump.win++;
+                    if (curLen === prevLen && curLen >= 2) { 
+                        stats.aligned.total++; if (nextActual !== outcome) stats.aligned.win++; 
                     }
-                    if (currentStreak === 1 && i >= 3 && shoe[i-1] !== shoe[i-2] && shoe[i-2] === shoe[i-3]) {
-                         stats.aligned.total++;
-                         if (nextActual !== outcome) stats.aligned.win++;
+                    if (colCount >= 4 && curLen === 2 && prevLen === 2 && matrix[colCount - 3].length === 2) {
+                        stats.doubleJump.total++; if (nextActual !== outcome) stats.doubleJump.win++;
+                    }
+                    if (colCount >= 4 && curLen === 2 && prevLen === 1 && matrix[colCount - 3].length === 2 && matrix[colCount - 4].length === 1) {
+                        stats.oneTwo.total++; if (nextActual !== outcome) stats.oneTwo.win++;
+                    }
+                    if (colCount >= 5) {
+                        let isShort = true;
+                        for(let c=1; c<=5; c++) { if (matrix[colCount - c].length > 2) isShort = false; }
+                        if (isShort && curLen === 2) { stats.shortRoad.total++; if (nextActual !== outcome) stats.shortRoad.win++; }
+                    }
+                    if (colCount >= 5 && curLen === 1) {
+                        let streakCount = 0; let totalOcc = 0;
+                        for(let c=0; c<colCount-1; c++) {
+                            if (matrix[c][0] === outcome) { totalOcc++; if (matrix[c].length > 1) streakCount++; }
+                        }
+                        if (totalOcc >= 3 && (streakCount / totalOcc) > 0.8) {
+                            stats.streakRule.total++; if (nextActual === outcome) stats.streakRule.win++;
+                        }
                     }
                 }
             });
@@ -167,18 +187,18 @@
             const container = document.getElementById('stats-container');
             container.innerHTML = '';
             
-            // 準備要傳送給主程式的打包資料
-            let exportWeights = { dragon: 15, jump: 15, aligned: 15 };
+            let exportWeights = {};
 
             for (let key in stats) {
                 let s = stats[key];
                 let winRate = s.total > 0 ? (s.win / s.total) : 0.5;
                 
+                // 動態權重公式：15分為基準，勝負率影響增減，最高 35分
                 let newWeight = Math.max(5, Math.min(35, Math.round(15 + ((winRate - 0.5) * 100))));
                 exportWeights[key] = newWeight; 
                 
                 let winRateStr = (winRate * 100).toFixed(1) + '%';
-                log(`特徵 [${s.name}] -> 勝率 ${winRateStr} => 建議新權重: ${newWeight}分`);
+                log(`特徵 [${s.name}] -> 勝率 ${winRateStr} => 新權重: ${newWeight}分`);
 
                 container.innerHTML += `
                     <div class="stat-card">
@@ -189,11 +209,9 @@
                 `;
             }
             
-            // 將算好的權重存入瀏覽器記憶體
             localStorage.setItem('quantum_ai_weights', JSON.stringify(exportWeights));
-            
-            log("\n✅ 訓練完畢！權重已自動儲存至系統。");
-            log("👉 請直接切換回主程式網頁並重新整理，AI 將自動套用最新權重！");
+            log("\n✅ 【七大特徵】訓練完畢！權重已自動儲存至系統。");
+            log("👉 請直接切換回主程式網頁並重新整理(F5)，AI 將自動套用最新權重！");
         }
     </script>
 </body>
