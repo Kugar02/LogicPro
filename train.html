@@ -114,7 +114,7 @@
 
                 const history = data.history;
                 if (!history || history.length === 0) {
-                    log("警告：目前 Google Sheet 中沒有歷史數據！請先到主程式輸入牌靴並點擊「結算並新靴」。");
+                    log("警告：目前沒有歷史數據！請先實戰並點擊「結算並新靴」。");
                     return;
                 }
 
@@ -127,14 +127,13 @@
         }
 
         function runSimulation(history) {
-            // 基礎特徵統計器
             let stats = {
-                '長龍順打': { win: 0, total: 0 },
-                '單跳反打': { win: 0, total: 0 },
-                '齊頭反打': { win: 0, total: 0 }
+                'dragon': { name: '長龍順打', win: 0, total: 0 },
+                'jump': { name: '單跳反打', win: 0, total: 0 },
+                'aligned': { name: '齊頭反打', win: 0, total: 0 }
             };
 
-            history.forEach((shoe, shoeIndex) => {
+            history.forEach((shoe) => {
                 let currentStreak = 0;
                 let lastOutcome = '';
                 
@@ -145,47 +144,56 @@
                     if (outcome === lastOutcome) currentStreak++;
                     else { currentStreak = 1; lastOutcome = outcome; }
 
-                    // 1. 長龍回測 (長度>=4，AI 預設順打)
                     if (currentStreak >= 4) {
-                        stats['長龍順打'].total++;
-                        if (nextActual === outcome) stats['長龍順打'].win++;
+                        stats.dragon.total++;
+                        if (nextActual === outcome) stats.dragon.win++;
                     }
-
-                    // 2. 單跳回測 (這裡做簡化判斷，若與上一手不同，AI預設繼續跳)
                     if (currentStreak === 1 && i >= 1 && shoe[i-1] !== outcome) {
-                        stats['單跳反打'].total++;
-                        if (nextActual !== outcome) stats['單跳反打'].win++;
+                        stats.jump.total++;
+                        if (nextActual !== outcome) stats.jump.win++;
+                    }
+                    if (currentStreak === 1 && i >= 3 && shoe[i-1] !== shoe[i-2] && shoe[i-2] === shoe[i-3]) {
+                         stats.aligned.total++;
+                         if (nextActual !== outcome) stats.aligned.win++;
                     }
                 }
             });
 
             log("回測運算完成！正在計算最新勝率與權重...");
-            displayResults(stats);
+            displayAndSaveResults(stats);
         }
 
-        function displayResults(stats) {
+        function displayAndSaveResults(stats) {
             const container = document.getElementById('stats-container');
             container.innerHTML = '';
+            
+            // 準備要傳送給主程式的打包資料
+            let exportWeights = { dragon: 15, jump: 15, aligned: 15 };
 
-            for (let pattern in stats) {
-                let s = stats[pattern];
+            for (let key in stats) {
+                let s = stats[key];
                 let winRate = s.total > 0 ? (s.win / s.total) : 0.5;
                 
-                // 動態權重公式：基礎 15分，最高 35分
                 let newWeight = Math.max(5, Math.min(35, Math.round(15 + ((winRate - 0.5) * 100))));
+                exportWeights[key] = newWeight; 
                 
                 let winRateStr = (winRate * 100).toFixed(1) + '%';
-                log(`特徵 [${pattern}] -> 出現 ${s.total} 次, 勝率 ${winRateStr} => 建議新權重: ${newWeight}分`);
+                log(`特徵 [${s.name}] -> 勝率 ${winRateStr} => 建議新權重: ${newWeight}分`);
 
                 container.innerHTML += `
                     <div class="stat-card">
-                        <div class="stat-name">${pattern}</div>
+                        <div class="stat-name">${s.name}</div>
                         <div class="stat-value">${newWeight} 分</div>
-                        <div style="color: #94a3b8; font-size: 0.8rem; margin-top: 5px;">勝率: ${winRateStr}</div>
+                        <div style="color: #94a3b8; font-size: 0.8rem; margin-top: 5px;">出現: ${s.total} 次 | 勝率: ${winRateStr}</div>
                     </div>
                 `;
             }
-            log("\n訓練完畢！你可以在主程式的 QuantumEngine 中，手動更新這些特徵權重以達到自我進化。");
+            
+            // 將算好的權重存入瀏覽器記憶體
+            localStorage.setItem('quantum_ai_weights', JSON.stringify(exportWeights));
+            
+            log("\n✅ 訓練完畢！權重已自動儲存至系統。");
+            log("👉 請直接切換回主程式網頁並重新整理，AI 將自動套用最新權重！");
         }
     </script>
 </body>
