@@ -184,7 +184,7 @@
 
         .grid-board td {
             border: 1px solid var(--grid-line);
-            width: 26px; /* 固定寬高解決橢圓問題 */
+            width: 26px; 
             height: 26px;
             text-align: center;
             vertical-align: middle;
@@ -235,7 +235,7 @@
             </div>
             <div class="stat-box">
                 <span class="stat-label">AI 最終預測</span>
-                <span class="stat-value recommendation" id="ai-recommend">等待輸入...</span>
+                <span class="stat-value recommendation" id="ai-recommend">等待數據累積...</span>
             </div>
             <div class="stat-box">
                 <span class="stat-label">下一注建議</span>
@@ -282,7 +282,161 @@
             consecutiveLosses: 0   
         };
 
-        // 1. 初始化五路網格
+        // ==========================================
+        // 🧠 Quantum Engine 核心 AI 引擎 (純前端 JS)
+        // ==========================================
+        const QuantumEngine = {
+            THEORETICAL_B: 50.68,
+            THEORETICAL_P: 49.32,
+
+            analyze: function(rawRecords) {
+                const records = rawRecords.filter(r => r === 'B' || r === 'P');
+                
+                if (records.length < 2) {
+                    return { status: "waiting", recommendation: "等待數據累積...", action: "NONE", bet_amount: 0 };
+                }
+
+                const total = records.length;
+                const bCount = records.filter(r => r === 'B').length;
+                const pCount = records.filter(r => r === 'P').length;
+                const smoothing = Math.min(total / 30, 0.8);
+                
+                const dynamicB = (this.THEORETICAL_B * (1 - smoothing)) + ((bCount / total * 100) * smoothing);
+                const dynamicP = (this.THEORETICAL_P * (1 - smoothing)) + ((pCount / total * 100) * smoothing);
+                const baseWeight = { B: dynamicB, P: dynamicP };
+
+                const bigRoadMatrix = this.buildMatrix(records);
+                const matBigEye = this.buildMatrix(this.deriveSequence(bigRoadMatrix, 1));
+                const matSmall = this.buildMatrix(this.deriveSequence(bigRoadMatrix, 2));
+                const matRoach = this.buildMatrix(this.deriveSequence(bigRoadMatrix, 3));
+
+                const bigRoad = this.detectPatterns('大路', bigRoadMatrix, false);
+                const bigEyeBoy = this.detectPatterns('大眼仔', matBigEye, true);
+                const smallRoad = this.detectPatterns('小路', matSmall, true);
+                const roachRoad = this.detectPatterns('曱甴路', matRoach, true);
+
+                const askRoad = this.simulateNextAskRoad(bigRoadMatrix);
+
+                let totalB = baseWeight.B + askRoad.weight.B + bigRoad.weight.B + bigEyeBoy.weight.B + smallRoad.weight.B + roachRoad.weight.B;
+                let totalP = baseWeight.P + askRoad.weight.P + bigRoad.weight.P + bigEyeBoy.weight.P + smallRoad.weight.P + roachRoad.weight.P;
+                let totalConf = askRoad.confidence + bigRoad.confidence + bigEyeBoy.confidence + smallRoad.confidence + roachRoad.confidence;
+
+                const diff = Math.abs(totalB - totalP);
+                const confThreshold = 40;
+
+                let action = "NONE";
+                let recommendation = "觀望 (防禦機制觸發)";
+
+                if (diff > 10 && totalConf >= confThreshold) {
+                    if (totalB > totalP) { action = "B"; recommendation = "正打 莊 (B)"; } 
+                    else { action = "P"; recommendation = "正打 閒 (P)"; }
+                } else if (diff <= 10) {
+                    recommendation = "鎖死觀望 (路單衝突)";
+                } else if (totalConf < confThreshold) {
+                    recommendation = "鎖死觀望 (無明顯特徵)";
+                }
+
+                return {
+                    status: "success",
+                    action: action,
+                    recommendation: recommendation,
+                    cores_analysis: [bigRoad, bigEyeBoy, smallRoad, roachRoad]
+                };
+            },
+
+            buildMatrix: function(seq) {
+                let matrix = [];
+                let currentCol = -1;
+                let lastResult = null;
+                for (let res of seq) {
+                    if (res !== lastResult) {
+                        currentCol++;
+                        matrix[currentCol] = [];
+                    }
+                    matrix[currentCol].push(res);
+                    lastResult = res;
+                }
+                return matrix;
+            },
+
+            deriveSequence: function(matrix, offset) {
+                let seq = [];
+                for (let col = 0; col < matrix.length; col++) {
+                    let rowLen = matrix[col].length;
+                    for (let row = 0; row < rowLen; row++) {
+                        if (col < offset) continue;
+                        if (col === offset && row === 0) continue;
+
+                        if (row === 0) {
+                            let prevLen = matrix[col - 1].length;
+                            let compLen = matrix[col - 1 - offset].length;
+                            seq.push(prevLen === compLen ? 'R' : 'B');
+                        } else {
+                            let compLen = matrix[col - offset] ? matrix[col - offset].length : 0;
+                            if (row < compLen) seq.push('R');
+                            else if (row === compLen) seq.push('B');
+                            else seq.push('R');
+                        }
+                    }
+                }
+                return seq;
+            },
+
+            detectPatterns: function(name, matrix, isDerived) {
+                let weight = { B: 0, P: 0 };
+                let conf = 0;
+                let colCount = matrix.length;
+
+                if (colCount >= 2) {
+                    let currentCol = matrix[colCount - 1];
+                    let prevCol = matrix[colCount - 2];
+                    let curLen = currentCol.length;
+                    let prevLen = prevCol.length;
+                    let outcome = currentCol[0];
+                    let opposite = (outcome === 'B' || outcome === 'R') ? (isDerived ? 'B' : 'P') : (isDerived ? 'R' : 'B');
+
+                    if (curLen === prevLen && curLen >= 2) {
+                        conf += 20;
+                        if (!isDerived) weight[opposite] += 15;
+                    }
+                    if (curLen >= 4) {
+                        conf += 25;
+                        if (!isDerived) weight[outcome] += 15;
+                    }
+                    if (colCount >= 4 && curLen === 1 && matrix[colCount - 2].length === 1 && matrix[colCount - 3].length === 1) {
+                        conf += 15;
+                        if (!isDerived) weight[opposite] += 15;
+                    }
+                }
+                return { name: name, weight: weight, confidence: conf, matrix: matrix };
+            },
+
+            simulateNextAskRoad: function(matrix) {
+                let weight = { B: 0, P: 0 };
+                let conf = 0;
+                let colCount = matrix.length;
+                if (colCount > 2) {
+                    let lastLen = matrix[colCount - 1].length;
+                    let prevLen = matrix[colCount - 2].length;
+                    let lastOutcome = matrix[colCount - 1][0];
+                    let opposite = lastOutcome === 'B' ? 'P' : 'B';
+
+                    if (lastLen === prevLen) {
+                        weight[opposite] += 30;
+                        conf += 25;
+                    } else if (lastLen < prevLen) {
+                        weight[lastOutcome] += 20;
+                        conf += 15;
+                    }
+                }
+                return { weight: weight, confidence: conf };
+            }
+        };
+
+        // ==========================================
+        // 🎨 前端 UI 與操作邏輯
+        // ==========================================
+
         function initGrid(elementId, rows, cols) {
             const container = document.getElementById(elementId);
             let table = '<table class="grid-board">';
@@ -305,11 +459,11 @@
             initGrid('roach-road-board', 6, 18);  
         };
 
-        // 2. 新增紀錄 & 結算
         function addRecord(result) {
+            // 結算勝負
             if (state.lastAiAction !== 'NONE' && state.currentBetAmount > 0) {
                 if (result === 'T') {
-                    console.log("和局，退水");
+                    // 和局退水
                 } else if (result === state.lastAiAction) {
                     state.win++;
                     state.balance += state.currentBetAmount;
@@ -323,10 +477,9 @@
             updateBankrollUI();
             state.records.push(result);
             renderBeadPlate();
-            analyzeWithPHP(); 
+            analyzeWithJS(); // 使用本地 JS 引擎運算
         }
 
-        // 更新資金UI (加入霓虹發光效果)
         function updateBankrollUI() {
             const profitUI = document.getElementById('total-profit');
             profitUI.innerText = state.balance >= 0 ? `+$${state.balance}` : `-$${Math.abs(state.balance)}`;
@@ -340,13 +493,11 @@
                 profitUI.style.color = 'var(--text-main)';
                 profitUI.style.textShadow = 'none';
             }
-
             const totalPlays = state.win + state.loss;
             const winRate = totalPlays > 0 ? Math.round((state.win / totalPlays) * 100) : 0;
             document.getElementById('win-rate').innerText = `${state.win}勝 ${state.loss}負 (${winRate}%)`;
         }
 
-        // 3. 珠盤路 (徹底解決橢圓形問題，加入完美正圓與立體陰影)
         function renderBeadPlate() {
             document.querySelectorAll('#bead-plate-board td').forEach(td => td.innerHTML = '');
             const rows = 6;
@@ -357,7 +508,6 @@
                 if (cell) {
                     let color = res === 'B' ? 'var(--red-color)' : (res === 'P' ? 'var(--blue-color)' : 'var(--green-color)');
                     let text = res === 'B' ? '莊' : (res === 'P' ? '閒' : '和');
-                    // 使用固定像素 20x20，完美正圓
                     cell.innerHTML = `<div style="background-color: ${color}; color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin: 0 auto; box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.5); text-shadow: 1px 1px 1px rgba(0,0,0,0.5);">${text}</div>`;
                 }
             });
@@ -367,79 +517,62 @@
             if(state.records.length > 0) {
                 state.records.pop();
                 renderBeadPlate();
-                analyzeWithPHP(); 
+                analyzeWithJS(); 
             }
         }
 
-        // 5. 核心 API 串接
-        async function analyzeWithPHP() {
+        function analyzeWithJS() {
             const recommendUI = document.getElementById('ai-recommend');
-            recommendUI.innerText = "🧠 系統推算中...";
-            recommendUI.classList.add('ai-thinking');
+            
+            // 呼叫 QuantumEngine
+            const data = QuantumEngine.analyze(state.records);
+            
+            const baseBet = parseInt(document.getElementById('base-bet').value) || 1000;
+            const strategy = document.getElementById('bet-strategy').value;
+            
+            state.lastAiAction = data.action || 'NONE';
 
-            try {
-                const response = await fetch('api.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(state.records)
-                });
-                const data = await response.json();
-                
-                recommendUI.classList.remove('ai-thinking');
-
-                const baseBet = parseInt(document.getElementById('base-bet').value) || 1000;
-                const strategy = document.getElementById('bet-strategy').value;
-                
-                state.lastAiAction = data.action || 'NONE';
-
-                if (state.lastAiAction === 'NONE') {
-                    state.currentBetAmount = 0;
+            if (state.lastAiAction === 'NONE') {
+                state.currentBetAmount = 0;
+            } else {
+                if (strategy === 'martingale') {
+                    state.currentBetAmount = baseBet * Math.pow(2, state.consecutiveLosses);
                 } else {
-                    if (strategy === 'martingale') {
-                        state.currentBetAmount = baseBet * Math.pow(2, state.consecutiveLosses);
-                    } else {
-                        state.currentBetAmount = baseBet;
-                    }
+                    state.currentBetAmount = baseBet;
                 }
+            }
 
-                // 更新文字與發光效果
-                if (data.status === 'success') {
-                    recommendUI.innerText = data.recommendation;
-                    document.getElementById('bet-amount').innerText = `$${state.currentBetAmount}`;
-                    
-                    if (data.action === 'B') {
-                        recommendUI.style.color = 'var(--red-color)';
-                        recommendUI.style.textShadow = '0 0 15px rgba(239, 68, 68, 0.6)';
-                    } else if (data.action === 'P') {
-                        recommendUI.style.color = 'var(--blue-color)';
-                        recommendUI.style.textShadow = '0 0 15px rgba(59, 130, 246, 0.6)';
-                    } else {
-                        recommendUI.style.color = 'var(--gold-color)';
-                        recommendUI.style.textShadow = '0 0 15px rgba(251, 191, 36, 0.4)';
-                    }
+            // 更新預測顯示
+            if (data.status === 'success') {
+                recommendUI.innerText = data.recommendation;
+                document.getElementById('bet-amount').innerText = `$${state.currentBetAmount}`;
+                
+                if (data.action === 'B') {
+                    recommendUI.style.color = 'var(--red-color)';
+                    recommendUI.style.textShadow = '0 0 15px rgba(239, 68, 68, 0.6)';
+                } else if (data.action === 'P') {
+                    recommendUI.style.color = 'var(--blue-color)';
+                    recommendUI.style.textShadow = '0 0 15px rgba(59, 130, 246, 0.6)';
                 } else {
-                    recommendUI.innerText = data.recommendation;
                     recommendUI.style.color = 'var(--gold-color)';
-                    document.getElementById('bet-amount').innerText = "$0";
+                    recommendUI.style.textShadow = '0 0 15px rgba(251, 191, 36, 0.4)';
                 }
-
-                if (data.cores_analysis) {
-                    if (data.cores_analysis[0].matrix) renderBigRoad(data.cores_analysis[0].matrix);
-                    if (data.cores_analysis[1].matrix) renderDerivedRoad(data.cores_analysis[1].matrix, 'big-eye-board', 'big-eye');
-                    if (data.cores_analysis[2].matrix) renderDerivedRoad(data.cores_analysis[2].matrix, 'small-road-board', 'small');
-                    if (data.cores_analysis[3].matrix) renderDerivedRoad(data.cores_analysis[3].matrix, 'roach-road-board', 'roach');
-                }
-
-            } catch (error) {
-                console.error("API 錯誤:", error);
-                recommendUI.classList.remove('ai-thinking');
-                recommendUI.innerText = "連線失敗";
-                recommendUI.style.color = 'var(--red-color)';
+            } else {
+                recommendUI.innerText = data.recommendation;
+                recommendUI.style.color = 'var(--gold-color)';
                 recommendUI.style.textShadow = 'none';
+                document.getElementById('bet-amount').innerText = "$0";
+            }
+
+            // 畫出大路與下三路
+            if (data.cores_analysis) {
+                if (data.cores_analysis[0].matrix) renderBigRoad(data.cores_analysis[0].matrix);
+                if (data.cores_analysis[1].matrix) renderDerivedRoad(data.cores_analysis[1].matrix, 'big-eye-board', 'big-eye');
+                if (data.cores_analysis[2].matrix) renderDerivedRoad(data.cores_analysis[2].matrix, 'small-road-board', 'small');
+                if (data.cores_analysis[3].matrix) renderDerivedRoad(data.cores_analysis[3].matrix, 'roach-road-board', 'roach');
             }
         }
 
-        // 6. 大路繪製 (空心圓，帶微發光)
         function renderBigRoad(matrix) {
             document.querySelectorAll('#big-road-board td').forEach(td => td.innerHTML = '');
             const maxRows = 6; 
@@ -466,7 +599,6 @@
             }
         }
 
-        // 7. 下三路繪製 (符號精緻化)
         function renderDerivedRoad(matrix, elementId, styleType) {
             document.querySelectorAll(`#${elementId} td`).forEach(td => td.innerHTML = '');
             const maxRows = 6;
@@ -504,7 +636,6 @@
             }
         }
 
-        // 8. 新靴重置 & 上傳 Google Drive
         async function resetBoard() {
             if (state.records.length === 0) return;
 
@@ -520,7 +651,6 @@
             };
 
             try {
-                // 【注意：請將此 URL 替換為你的 Google Apps Script Web App URL】
                 const gasUrl = "https://script.google.com/macros/s/AKfycbwRoL5wgWJeSlnyhba2zUpPWZTqxjVDwEtJNhtNnycw6hppg2FkmCNqxCDm-IFcgH76/exec"; 
                 
                 await fetch(gasUrl, {
