@@ -7,8 +7,8 @@
     <style>
         /* 基礎重置與尊榮版變數 */
         :root {
-            --bg-main: #0B0E14; /* 深邃午夜藍 */
-            --panel-bg: rgba(26, 31, 43, 0.7); /* 半透明毛玻璃底 */
+            --bg-main: #0B0E14;
+            --panel-bg: rgba(26, 31, 43, 0.7);
             --panel-border: rgba(255, 255, 255, 0.08);
             --text-main: #e2e8f0;
             --text-muted: #94a3b8;
@@ -33,7 +33,7 @@
             min-height: 100vh;
         }
 
-        /* 頂部控制與策略面板 (毛玻璃風格) */
+        /* 頂部控制與策略面板 */
         .top-container {
             display: flex;
             flex-direction: column;
@@ -50,7 +50,8 @@
         .strategy-panel {
             display: flex;
             justify-content: center;
-            gap: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
             padding-bottom: 15px;
             border-bottom: 1px solid rgba(255,255,255,0.05);
             align-items: center;
@@ -85,7 +86,7 @@
             flex-direction: column;
             align-items: center;
             flex: 1;
-            min-width: 120px;
+            min-width: 100px;
         }
 
         .stat-label {
@@ -97,18 +98,72 @@
         }
 
         .stat-value {
-            font-size: 1.6rem;
+            font-size: 1.5rem;
             font-weight: 800;
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
-        .recommendation {
-            color: var(--gold-color);
-            font-size: 1.5rem;
-            text-shadow: 0 0 12px rgba(251, 191, 36, 0.4);
+        /* 👑 全新：AI 獨立戰情室 */
+        .ai-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.8) 0%, rgba(11, 14, 20, 0.9) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            padding: 15px 20px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 4px 15px rgba(0,0,0,0.3);
         }
 
-        /* 控制區：立體漸層按鈕 */
+        .ai-main-result {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 10px;
+        }
+
+        .ai-main-title {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ai-main-recommendation {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--gold-color);
+            text-shadow: 0 0 15px rgba(251, 191, 36, 0.5);
+        }
+
+        .ai-cores {
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .core-card {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            padding: 10px;
+            flex: 1;
+            min-width: 80px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .core-name { font-size: 0.85rem; color: var(--text-muted); }
+        .core-rec { font-size: 1.3rem; font-weight: bold; }
+        .core-conf { font-size: 0.75rem; color: #64748b; }
+
+        /* 控制區 */
         .controls {
             display: flex;
             gap: 12px;
@@ -118,11 +173,10 @@
             padding: 15px;
             border-radius: 12px;
             border: 1px solid var(--panel-border);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
 
         button {
-            padding: 12px 24px;
+            padding: 12px 20px;
             font-size: 1.1rem;
             font-weight: bold;
             border: none;
@@ -136,33 +190,15 @@
             text-shadow: 0 1px 2px rgba(0,0,0,0.5);
         }
 
-        button:hover { 
-            transform: translateY(-2px);
-            filter: brightness(1.1);
-        }
-        
-        button:active {
-            transform: translateY(1px);
-        }
+        button:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        button:active { transform: translateY(1px); }
 
-        .btn-banker { 
-            background: linear-gradient(135deg, #ef4444, #b91c1c); 
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4), inset 0 1px 1px rgba(255,255,255,0.3);
-        }
-        .btn-player { 
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8); 
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4), inset 0 1px 1px rgba(255,255,255,0.3);
-        }
-        .btn-tie { 
-            background: linear-gradient(135deg, #10b981, #047857); 
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4), inset 0 1px 1px rgba(255,255,255,0.3);
-        }
-        .btn-action { 
-            background: linear-gradient(135deg, #475569, #1e293b); 
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255,255,255,0.1);
-        }
+        .btn-banker { background: linear-gradient(135deg, #ef4444, #b91c1c); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4); }
+        .btn-player { background: linear-gradient(135deg, #3b82f6, #1d4ed8); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+        .btn-tie { background: linear-gradient(135deg, #10b981, #047857); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); }
+        .btn-action { background: linear-gradient(135deg, #475569, #1e293b); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
 
-        /* 五路路紙矩陣 (尊榮暗黑版) */
+        /* 五路矩陣 */
         .roads-container {
             display: grid;
             grid-template-columns: minmax(180px, 1fr) minmax(400px, 3fr);
@@ -175,24 +211,8 @@
             height: 480px;
         }
 
-        .grid-board {
-            border-collapse: collapse;
-            width: 100%;
-            height: 100%;
-            table-layout: fixed;
-        }
-
-        .grid-board td {
-            border: 1px solid var(--grid-line);
-            width: 26px; 
-            height: 26px;
-            text-align: center;
-            vertical-align: middle;
-            position: relative;
-            box-sizing: border-box;
-            padding: 0;
-        }
-
+        .grid-board { border-collapse: collapse; width: 100%; height: 100%; table-layout: fixed; }
+        .grid-board td { border: 1px solid var(--grid-line); width: 26px; height: 26px; text-align: center; vertical-align: middle; position: relative; padding: 0; }
         .bead-plate { border-right: 3px solid var(--grid-section-line); }
         .right-roads { display: flex; flex-direction: column; height: 100%; }
         .big-road { flex: 1.2; border-bottom: 3px solid var(--grid-section-line); }
@@ -200,42 +220,40 @@
         .derived-roads > div { flex: 1; border-right: 2px solid var(--grid-section-line); }
         .derived-roads > div:last-child { border-right: none; }
         
-        /* 動畫 */
         @keyframes pulse {
             0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; }
+            50% { transform: scale(1.02); opacity: 0.8; }
             100% { transform: scale(1); opacity: 1; }
         }
-        .ai-thinking {
-            animation: pulse 1s infinite;
-            color: var(--text-muted) !important;
-        }
+        .ai-thinking { animation: pulse 1s infinite; color: var(--text-muted) !important; }
     </style>
 </head>
 <body>
 
     <!-- 頂部控制與儀表板 -->
     <div class="top-container">
-        <!-- 策略設定區 -->
+        <!-- 策略設定區 (新增本金與斐波那契) -->
         <div class="strategy-panel">
-            <label>基碼設定: $<input type="number" id="base-bet" value="1000" style="width: 90px;"></label>
+            <label>本金設定: $<input type="number" id="initial-bankroll" value="10000" style="width: 100px;" onchange="updateBankrollUI()"></label>
+            <label>基碼設定: $<input type="number" id="base-bet" value="1000" style="width: 80px;"></label>
             <label>注碼策略: 
                 <select id="bet-strategy">
+                    <option value="fibonacci">斐波那契 (退二進一)</option>
                     <option value="martingale">馬丁格爾 (輸後翻倍)</option>
                     <option value="flat">平注 (永遠下基碼)</option>
                 </select>
             </label>
         </div>
 
-        <!-- 資金與策略儀表板 -->
+        <!-- 資金儀表板 -->
         <div class="dashboard">
             <div class="stat-box">
-                <span class="stat-label">累計盈虧</span>
-                <span class="stat-value" id="total-profit" style="color: var(--text-main);">$0</span>
+                <span class="stat-label">當前餘額</span>
+                <span class="stat-value" id="current-balance" style="color: var(--text-main);">$10000</span>
             </div>
             <div class="stat-box">
-                <span class="stat-label">AI 最終預測</span>
-                <span class="stat-value recommendation" id="ai-recommend">等待數據累積...</span>
+                <span class="stat-label">累計淨盈虧</span>
+                <span class="stat-value" id="total-profit" style="color: var(--text-main);">$0</span>
             </div>
             <div class="stat-box">
                 <span class="stat-label">下一注建議</span>
@@ -248,6 +266,21 @@
         </div>
     </div>
 
+    <!-- 👑 全新：AI 獨立戰情分析室 -->
+    <div class="ai-panel">
+        <div class="ai-main-result">
+            <span class="ai-main-title">🧠 AI 引擎最終決策</span>
+            <span class="ai-main-recommendation" id="ai-recommend">等待數據累積...</span>
+        </div>
+        <div class="ai-cores" id="ai-cores-container">
+            <!-- 四大核心分析將透過 JS 自動生成在這裡 -->
+            <div class="core-card"><div class="core-name">大路特徵</div><div class="core-rec" style="color:#64748b;">無</div><div class="core-conf">等待中</div></div>
+            <div class="core-card"><div class="core-name">大眼仔</div><div class="core-rec" style="color:#64748b;">無</div><div class="core-conf">等待中</div></div>
+            <div class="core-card"><div class="core-name">小路</div><div class="core-rec" style="color:#64748b;">無</div><div class="core-conf">等待中</div></div>
+            <div class="core-card"><div class="core-name">曱甴路</div><div class="core-rec" style="color:#64748b;">無</div><div class="core-conf">等待中</div></div>
+        </div>
+    </div>
+
     <!-- 快捷輸入區 -->
     <div class="controls">
         <button class="btn-banker" onclick="addRecord('B')">🔴 開莊 (B)</button>
@@ -257,7 +290,7 @@
         <button class="btn-action" onclick="resetBoard()">🗑️ 結算並新靴</button>
     </div>
 
-    <!-- 五路矩陣面板 (暗黑版) -->
+    <!-- 五路矩陣面板 -->
     <div class="roads-container">
         <div class="bead-plate" id="bead-plate-board"></div>
         <div class="right-roads">
@@ -274,16 +307,20 @@
         // 全局狀態與資金管理
         const state = {
             records: [],
-            balance: 0,
+            netProfit: 0,       // 淨盈虧
             win: 0,
             loss: 0,
             lastAiAction: 'NONE',  
             currentBetAmount: 0,   
-            consecutiveLosses: 0   
+            consecutiveLosses: 0,
+            fibIndex: 0         // 斐波那契序列索引
         };
 
+        // 斐波那契數列 (1, 1, 2, 3, 5, 8, 13...)
+        const fibSequence = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610];
+
         // ==========================================
-        // 🧠 Quantum Engine 核心 AI 引擎 (純前端 JS)
+        // 🧠 Quantum Engine 核心 AI 引擎
         // ==========================================
         const QuantumEngine = {
             THEORETICAL_B: 50.68,
@@ -366,7 +403,6 @@
                     for (let row = 0; row < rowLen; row++) {
                         if (col < offset) continue;
                         if (col === offset && row === 0) continue;
-
                         if (row === 0) {
                             let prevLen = matrix[col - 1].length;
                             let compLen = matrix[col - 1 - offset].length;
@@ -386,7 +422,6 @@
                 let weight = { B: 0, P: 0 };
                 let conf = 0;
                 let colCount = matrix.length;
-
                 if (colCount >= 2) {
                     let currentCol = matrix[colCount - 1];
                     let prevCol = matrix[colCount - 2];
@@ -394,19 +429,9 @@
                     let prevLen = prevCol.length;
                     let outcome = currentCol[0];
                     let opposite = (outcome === 'B' || outcome === 'R') ? (isDerived ? 'B' : 'P') : (isDerived ? 'R' : 'B');
-
-                    if (curLen === prevLen && curLen >= 2) {
-                        conf += 20;
-                        if (!isDerived) weight[opposite] += 15;
-                    }
-                    if (curLen >= 4) {
-                        conf += 25;
-                        if (!isDerived) weight[outcome] += 15;
-                    }
-                    if (colCount >= 4 && curLen === 1 && matrix[colCount - 2].length === 1 && matrix[colCount - 3].length === 1) {
-                        conf += 15;
-                        if (!isDerived) weight[opposite] += 15;
-                    }
+                    if (curLen === prevLen && curLen >= 2) { conf += 20; if (!isDerived) weight[opposite] += 15; }
+                    if (curLen >= 4) { conf += 25; if (!isDerived) weight[outcome] += 15; }
+                    if (colCount >= 4 && curLen === 1 && matrix[colCount - 2].length === 1 && matrix[colCount - 3].length === 1) { conf += 15; if (!isDerived) weight[opposite] += 15; }
                 }
                 return { name: name, weight: weight, confidence: conf, matrix: matrix };
             },
@@ -420,14 +445,8 @@
                     let prevLen = matrix[colCount - 2].length;
                     let lastOutcome = matrix[colCount - 1][0];
                     let opposite = lastOutcome === 'B' ? 'P' : 'B';
-
-                    if (lastLen === prevLen) {
-                        weight[opposite] += 30;
-                        conf += 25;
-                    } else if (lastLen < prevLen) {
-                        weight[lastOutcome] += 20;
-                        conf += 15;
-                    }
+                    if (lastLen === prevLen) { weight[opposite] += 30; conf += 25; } 
+                    else if (lastLen < prevLen) { weight[lastOutcome] += 20; conf += 15; }
                 }
                 return { weight: weight, confidence: conf };
             }
@@ -442,9 +461,7 @@
             let table = '<table class="grid-board">';
             for (let r = 0; r < rows; r++) {
                 table += '<tr>';
-                for (let c = 0; c < cols; c++) {
-                    table += `<td id="${elementId}-${r}-${c}"></td>`;
-                }
+                for (let c = 0; c < cols; c++) { table += `<td id="${elementId}-${r}-${c}"></td>`; }
                 table += '</tr>';
             }
             table += '</table>';
@@ -457,42 +474,59 @@
             initGrid('big-eye-board', 6, 18);     
             initGrid('small-road-board', 6, 18);  
             initGrid('roach-road-board', 6, 18);  
+            updateBankrollUI(); // 初始化本金顯示
         };
 
         function addRecord(result) {
-            // 結算勝負
+            // 結算勝負與策略推演
             if (state.lastAiAction !== 'NONE' && state.currentBetAmount > 0) {
                 if (result === 'T') {
-                    // 和局退水
+                    // 和局退水，策略進度不變
                 } else if (result === state.lastAiAction) {
+                    // 贏局處理
                     state.win++;
-                    state.balance += state.currentBetAmount;
+                    state.netProfit += state.currentBetAmount;
                     state.consecutiveLosses = 0; 
+                    // 斐波那契：贏了退兩階 (最低為0)
+                    state.fibIndex = Math.max(0, state.fibIndex - 2);
                 } else {
+                    // 輸局處理
                     state.loss++;
-                    state.balance -= state.currentBetAmount;
+                    state.netProfit -= state.currentBetAmount;
                     state.consecutiveLosses++;
+                    // 斐波那契：輸了進一階 (最高不超過陣列長度)
+                    state.fibIndex = Math.min(fibSequence.length - 1, state.fibIndex + 1);
                 }
             }
             updateBankrollUI();
             state.records.push(result);
             renderBeadPlate();
-            analyzeWithJS(); // 使用本地 JS 引擎運算
+            analyzeWithJS(); 
         }
 
+        // 更新資金與盈虧 UI (加入本金計算)
         function updateBankrollUI() {
+            const initialBankroll = parseInt(document.getElementById('initial-bankroll').value) || 0;
+            const currentBalance = initialBankroll + state.netProfit;
+            
+            // 更新當前餘額
+            const balanceUI = document.getElementById('current-balance');
+            balanceUI.innerText = `$${currentBalance}`;
+            
+            // 更新累計盈虧
             const profitUI = document.getElementById('total-profit');
-            profitUI.innerText = state.balance >= 0 ? `+$${state.balance}` : `-$${Math.abs(state.balance)}`;
-            if (state.balance > 0) {
+            profitUI.innerText = state.netProfit >= 0 ? `+$${state.netProfit}` : `-$${Math.abs(state.netProfit)}`;
+            if (state.netProfit > 0) {
                 profitUI.style.color = 'var(--green-color)';
                 profitUI.style.textShadow = '0 0 15px rgba(16, 185, 129, 0.5)';
-            } else if (state.balance < 0) {
+            } else if (state.netProfit < 0) {
                 profitUI.style.color = 'var(--red-color)';
                 profitUI.style.textShadow = '0 0 15px rgba(239, 68, 68, 0.5)';
             } else {
                 profitUI.style.color = 'var(--text-main)';
                 profitUI.style.textShadow = 'none';
             }
+
             const totalPlays = state.win + state.loss;
             const winRate = totalPlays > 0 ? Math.round((state.win / totalPlays) * 100) : 0;
             document.getElementById('win-rate').innerText = `${state.win}勝 ${state.loss}負 (${winRate}%)`;
@@ -523,8 +557,9 @@
 
         function analyzeWithJS() {
             const recommendUI = document.getElementById('ai-recommend');
+            const coresContainer = document.getElementById('ai-cores-container');
+            recommendUI.classList.add('ai-thinking');
             
-            // 呼叫 QuantumEngine
             const data = QuantumEngine.analyze(state.records);
             
             const baseBet = parseInt(document.getElementById('base-bet').value) || 1000;
@@ -532,17 +567,22 @@
             
             state.lastAiAction = data.action || 'NONE';
 
+            // 策略注碼計算
             if (state.lastAiAction === 'NONE') {
                 state.currentBetAmount = 0;
             } else {
                 if (strategy === 'martingale') {
                     state.currentBetAmount = baseBet * Math.pow(2, state.consecutiveLosses);
+                } else if (strategy === 'fibonacci') {
+                    state.currentBetAmount = baseBet * fibSequence[state.fibIndex];
                 } else {
                     state.currentBetAmount = baseBet;
                 }
             }
 
-            // 更新預測顯示
+            recommendUI.classList.remove('ai-thinking');
+
+            // 1. 渲染最終預測與注碼
             if (data.status === 'success') {
                 recommendUI.innerText = data.recommendation;
                 document.getElementById('bet-amount').innerText = `$${state.currentBetAmount}`;
@@ -564,8 +604,26 @@
                 document.getElementById('bet-amount').innerText = "$0";
             }
 
-            // 畫出大路與下三路
+            // 2. 渲染四大核心獨立介面
             if (data.cores_analysis) {
+                let coresHTML = '';
+                data.cores_analysis.forEach(core => {
+                    let recText = '無特徵';
+                    let recColor = '#64748b';
+                    if (core.weight.B > core.weight.P) { recText = '傾向 莊'; recColor = 'var(--red-color)'; }
+                    else if (core.weight.P > core.weight.B) { recText = '傾向 閒'; recColor = 'var(--blue-color)'; }
+                    
+                    coresHTML += `
+                        <div class="core-card">
+                            <div class="core-name">${core.name}</div>
+                            <div class="core-rec" style="color: ${recColor};">${recText}</div>
+                            <div class="core-conf">信心指數: ${core.confidence}</div>
+                        </div>
+                    `;
+                });
+                coresContainer.innerHTML = coresHTML;
+
+                // 畫出大路與下三路矩陣
                 if (data.cores_analysis[0].matrix) renderBigRoad(data.cores_analysis[0].matrix);
                 if (data.cores_analysis[1].matrix) renderDerivedRoad(data.cores_analysis[1].matrix, 'big-eye-board', 'big-eye');
                 if (data.cores_analysis[2].matrix) renderDerivedRoad(data.cores_analysis[2].matrix, 'small-road-board', 'small');
@@ -603,12 +661,10 @@
             document.querySelectorAll(`#${elementId} td`).forEach(td => td.innerHTML = '');
             const maxRows = 6;
             let currentVisualCol = 0;
-
             for (let col = 0; col < matrix.length; col++) {
                 let rowLength = matrix[col].length;
                 let outcome = matrix[col][0]; 
                 let actualRow = 0;
-
                 for (let i = 0; i < rowLength; i++) {
                     let renderCol = currentVisualCol;
                     let renderRow = actualRow;
@@ -616,7 +672,6 @@
                         renderRow = maxRows - 1;
                         renderCol += (actualRow - (maxRows - 1));
                     }
-
                     const cell = document.getElementById(`${elementId}-${renderRow}-${renderCol}`);
                     if (cell) {
                         let color = outcome === 'R' ? 'var(--red-color)' : 'var(--blue-color)';
@@ -646,13 +701,12 @@
 
             const shoeData = {
                 records: state.records,
-                profit: state.balance,
+                profit: state.netProfit,
                 status: `AI WinRate: ${document.getElementById('win-rate').innerText}`
             };
 
             try {
                 const gasUrl = "https://script.google.com/macros/s/AKfycbwRoL5wgWJeSlnyhba2zUpPWZTqxjVDwEtJNhtNnycw6hppg2FkmCNqxCDm-IFcgH76/exec"; 
-                
                 await fetch(gasUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -663,19 +717,30 @@
                 console.error("上傳失敗:", error);
             }
 
+            // 重置狀態
             state.records = [];
-            state.balance = 0;
+            state.netProfit = 0;
             state.win = 0;
             state.loss = 0;
             state.lastAiAction = 'NONE';
             state.currentBetAmount = 0;
             state.consecutiveLosses = 0;
+            state.fibIndex = 0;
 
             document.querySelectorAll('.grid-board td').forEach(td => td.innerHTML = '');
             updateBankrollUI();
-            recommendUI.innerText = "等待輸入...";
+            
+            recommendUI.innerText = "等待數據累積...";
             recommendUI.style.color = "var(--gold-color)";
             document.getElementById('bet-amount').innerText = "$0";
+            
+            // 重置核心分析 UI
+            document.getElementById('ai-cores-container').innerHTML = `
+                <div class="core-card"><div class="core-name">大路特徵</div><div class="core-rec" style="color:#64748b;">無</div><div class="core-conf">等待中</div></div>
+                <div class="core-card"><div class="core-name">大眼仔</div><div class="core-rec" style="color:#64748b;">無</div><div class="core-conf">等待中</div></div>
+                <div class="core-card"><div class="core-name">小路</div><div class="core-rec" style="color:#64748b;">無</div><div class="core-conf">等待中</div></div>
+                <div class="core-card"><div class="core-name">曱甴路</div><div class="core-rec" style="color:#64748b;">無</div><div class="core-conf">等待中</div></div>
+            `;
         }
     </script>
 </body>
