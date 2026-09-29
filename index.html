@@ -197,11 +197,12 @@
         .btn-player { background: linear-gradient(135deg, #3b82f6, #1d4ed8); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
         .btn-tie { background: linear-gradient(135deg, #10b981, #047857); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); }
         .btn-action { background: linear-gradient(135deg, #475569, #1e293b); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
+        .btn-import { background: linear-gradient(135deg, #f59e0b, #d97706); font-size: 0.95rem; padding: 8px 16px; border-radius: 6px;}
 
-        /* 五路矩陣 */
+        /* 五路矩陣 (加入水平滑動，解除長度限制) */
         .roads-container {
             display: grid;
-            grid-template-columns: minmax(180px, 1fr) minmax(400px, 3fr);
+            grid-template-columns: minmax(200px, 1fr) minmax(400px, 3fr);
             gap: 0;
             background-color: var(--grid-bg);
             border-radius: 12px;
@@ -211,14 +212,32 @@
             height: 480px;
         }
 
-        .grid-board { border-collapse: collapse; width: 100%; height: 100%; table-layout: fixed; }
-        .grid-board td { border: 1px solid var(--grid-line); width: 26px; height: 26px; text-align: center; vertical-align: middle; position: relative; padding: 0; }
-        .bead-plate { border-right: 3px solid var(--grid-section-line); }
-        .right-roads { display: flex; flex-direction: column; height: 100%; }
-        .big-road { flex: 1.2; border-bottom: 3px solid var(--grid-section-line); }
-        .derived-roads { flex: 1; display: flex; }
-        .derived-roads > div { flex: 1; border-right: 2px solid var(--grid-section-line); }
+        /* 設定內部區塊可以橫向捲動 */
+        .bead-plate { border-right: 3px solid var(--grid-section-line); overflow-x: auto; overflow-y: hidden; }
+        .right-roads { display: flex; flex-direction: column; height: 100%; overflow: hidden;}
+        .big-road { flex: 1.2; border-bottom: 3px solid var(--grid-section-line); overflow-x: auto; overflow-y: hidden; }
+        .derived-roads { flex: 1; display: flex; overflow-x: auto; overflow-y: hidden; }
+        .derived-roads > div { flex: 1; border-right: 2px solid var(--grid-section-line); min-width: 250px; }
         .derived-roads > div:last-child { border-right: none; }
+
+        /* 修改格線屬性，保證不壓縮變形 */
+        .grid-board { border-collapse: collapse; table-layout: fixed; }
+        .grid-board td { 
+            border: 1px solid var(--grid-line); 
+            min-width: 26px; /* 保證格子大小絕對一致 */
+            max-width: 26px;
+            height: 26px; 
+            text-align: center; 
+            vertical-align: middle; 
+            position: relative; 
+            padding: 0; 
+        }
+
+        /* 隱藏捲軸美化 (Webkit) */
+        ::-webkit-scrollbar { height: 8px; width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--grid-bg); }
+        ::-webkit-scrollbar-thumb { background: var(--grid-section-line); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
         
         @keyframes pulse {
             0% { transform: scale(1); opacity: 1; }
@@ -245,8 +264,16 @@
             </label>
         </div>
 
+        <!-- 🆕 快速匯入數據區 -->
+        <div class="strategy-panel" style="margin-top: -5px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-bottom: 0; border-bottom: none;">
+            <label style="display:flex; align-items:center; gap:10px;">快速匯入已開牌局: 
+                <input type="text" id="batch-input" placeholder="例: BPBTPP 或 莊閒莊和閒" style="width: 250px;">
+                <button class="btn-import" onclick="importBatchData()">📥 一鍵匯入</button>
+            </label>
+        </div>
+
         <!-- 資金儀表板 -->
-        <div class="dashboard">
+        <div class="dashboard" style="margin-top: 15px;">
             <div class="stat-box">
                 <span class="stat-label">當前餘額</span>
                 <span class="stat-value" id="current-balance" style="color: var(--text-main);">$10000</span>
@@ -323,24 +350,13 @@
         const QuantumEngine = {
             THEORETICAL_B: 50.68,
             THEORETICAL_P: 49.32,
-            
-            // 預設 7 大特徵權重
-            weightsConfig: {
-                dragon: 15,       
-                jump: 15,         
-                aligned: 15,      
-                doubleJump: 15,   
-                oneTwo: 15,       
-                shortRoad: 15,    
-                streakRule: 15    
-            },
+            weightsConfig: { dragon: 15, jump: 15, aligned: 15, doubleJump: 15, oneTwo: 15, shortRoad: 15, streakRule: 15 },
 
             init: function() {
                 const savedWeights = localStorage.getItem('quantum_ai_weights');
                 if (savedWeights) {
                     try {
                         this.weightsConfig = Object.assign(this.weightsConfig, JSON.parse(savedWeights));
-                        console.log("✅ 成功載入七大特徵回測權重:", this.weightsConfig);
                         const badge = document.getElementById('ai-version-badge');
                         if(badge) {
                             badge.innerText = "已載入最新回測權重";
@@ -348,7 +364,7 @@
                             badge.style.color = "var(--green-color)";
                             badge.style.border = "1px solid var(--green-color)";
                         }
-                    } catch(e) { console.error("權重讀取失敗", e); }
+                    } catch(e) {}
                 }
             },
 
@@ -382,7 +398,7 @@
                 let totalConf = askRoad.confidence + bigRoad.confidence + bigEyeBoy.confidence + smallRoad.confidence + roachRoad.confidence;
 
                 const diff = Math.abs(totalB - totalP);
-                const confThreshold = 45; // 提高特徵門檻
+                const confThreshold = 45; 
 
                 let action = "NONE";
                 let recommendation = "觀望 (防禦機制觸發)";
@@ -390,26 +406,17 @@
                 if (diff > 10 && totalConf >= confThreshold) {
                     if (totalB > totalP) { action = "B"; recommendation = "正打 莊 (B)"; } 
                     else { action = "P"; recommendation = "正打 閒 (P)"; }
-                } else if (diff <= 10) {
-                    recommendation = "鎖死觀望 (路單衝突)";
-                } else if (totalConf < confThreshold) {
-                    recommendation = "鎖死觀望 (無明顯特徵)";
-                }
+                } else if (diff <= 10) { recommendation = "鎖死觀望 (路單衝突)"; } 
+                else if (totalConf < confThreshold) { recommendation = "鎖死觀望 (無明顯特徵)"; }
 
-                return {
-                    status: "success", action: action, recommendation: recommendation,
-                    cores_analysis: [bigRoad, bigEyeBoy, smallRoad, roachRoad]
-                };
+                return { status: "success", action: action, recommendation: recommendation, cores_analysis: [bigRoad, bigEyeBoy, smallRoad, roachRoad] };
             },
 
             buildMatrix: function(seq) {
-                let matrix = [];
-                let currentCol = -1;
-                let lastResult = null;
+                let matrix = []; let currentCol = -1; let lastResult = null;
                 for (let res of seq) {
                     if (res !== lastResult) { currentCol++; matrix[currentCol] = []; }
-                    matrix[currentCol].push(res);
-                    lastResult = res;
+                    matrix[currentCol].push(res); lastResult = res;
                 }
                 return matrix;
             },
@@ -421,9 +428,8 @@
                     for (let row = 0; row < rowLen; row++) {
                         if (col < offset) continue;
                         if (col === offset && row === 0) continue;
-                        if (row === 0) {
-                            seq.push(matrix[col - 1].length === matrix[col - 1 - offset].length ? 'R' : 'B');
-                        } else {
+                        if (row === 0) { seq.push(matrix[col - 1].length === matrix[col - 1 - offset].length ? 'R' : 'B'); } 
+                        else {
                             let compLen = matrix[col - offset] ? matrix[col - offset].length : 0;
                             if (row < compLen) seq.push('R');
                             else if (row === compLen) seq.push('B');
@@ -435,71 +441,36 @@
             },
 
             detectPatterns: function(name, matrix, isDerived) {
-                let weight = { B: 0, P: 0 };
-                let conf = 0;
-                let matchedPatterns = [];
-                let colCount = matrix.length;
-                let w = this.weightsConfig;
-
+                let weight = { B: 0, P: 0 }; let conf = 0; let matchedPatterns = []; let colCount = matrix.length; let w = this.weightsConfig;
                 if (colCount >= 2) {
-                    let curLen = matrix[colCount - 1].length;
-                    let prevLen = matrix[colCount - 2].length;
+                    let curLen = matrix[colCount - 1].length; let prevLen = matrix[colCount - 2].length;
                     let outcome = matrix[colCount - 1][0];
                     let opposite = (outcome === 'B' || outcome === 'R') ? (isDerived ? 'B' : 'P') : (isDerived ? 'R' : 'B');
                     
-                    if (curLen === prevLen && curLen >= 2) { 
-                        conf += 20; if (!isDerived) weight[opposite] += w.aligned; 
-                        matchedPatterns.push("齊頭");
-                    }
-                    if (curLen >= 4) { 
-                        conf += 25; if (!isDerived) weight[outcome] += w.dragon; 
-                        matchedPatterns.push("長龍");
-                    }
-                    if (colCount >= 4 && curLen === 1 && prevLen === 1 && matrix[colCount - 3].length === 1) { 
-                        conf += 15; if (!isDerived) weight[opposite] += w.jump; 
-                        matchedPatterns.push("單跳");
-                    }
-                    if (colCount >= 4 && curLen === 2 && prevLen === 2 && matrix[colCount - 3].length === 2) { 
-                        conf += 20; if (!isDerived) weight[opposite] += w.doubleJump; 
-                        matchedPatterns.push("雙跳");
-                    }
-                    if (colCount >= 4 && curLen === 2 && prevLen === 1 && matrix[colCount - 3].length === 2 && matrix[colCount - 4].length === 1) { 
-                        conf += 20; if (!isDerived) weight[opposite] += w.oneTwo; 
-                        matchedPatterns.push("一房兩廳");
-                    }
+                    if (curLen === prevLen && curLen >= 2) { conf += 20; if (!isDerived) weight[opposite] += w.aligned; matchedPatterns.push("齊頭"); }
+                    if (curLen >= 4) { conf += 25; if (!isDerived) weight[outcome] += w.dragon; matchedPatterns.push("長龍"); }
+                    if (colCount >= 4 && curLen === 1 && prevLen === 1 && matrix[colCount - 3].length === 1) { conf += 15; if (!isDerived) weight[opposite] += w.jump; matchedPatterns.push("單跳"); }
+                    if (colCount >= 4 && curLen === 2 && prevLen === 2 && matrix[colCount - 3].length === 2) { conf += 20; if (!isDerived) weight[opposite] += w.doubleJump; matchedPatterns.push("雙跳"); }
+                    if (colCount >= 4 && curLen === 2 && prevLen === 1 && matrix[colCount - 3].length === 2 && matrix[colCount - 4].length === 1) { conf += 20; if (!isDerived) weight[opposite] += w.oneTwo; matchedPatterns.push("一房兩廳"); }
                     if (colCount >= 5) {
-                        let isShort = true;
-                        for(let i=1; i<=5; i++) { if (matrix[colCount - i].length > 2) isShort = false; }
-                        if (isShort && curLen === 2) {
-                            conf += 15; if (!isDerived) weight[opposite] += w.shortRoad;
-                            matchedPatterns.push("短路");
-                        }
+                        let isShort = true; for(let i=1; i<=5; i++) { if (matrix[colCount - i].length > 2) isShort = false; }
+                        if (isShort && curLen === 2) { conf += 15; if (!isDerived) weight[opposite] += w.shortRoad; matchedPatterns.push("短路"); }
                     }
                     if (colCount >= 5 && curLen === 1) {
                         let streakCount = 0; let totalOcc = 0;
-                        for(let i=0; i<colCount-1; i++) {
-                            if (matrix[i][0] === outcome) { totalOcc++; if (matrix[i].length > 1) streakCount++; }
-                        }
-                        if (totalOcc >= 3 && (streakCount / totalOcc) > 0.8) {
-                            conf += 20; if (!isDerived) weight[outcome] += w.streakRule;
-                            matchedPatterns.push(`逢${outcome === 'B' || outcome === 'R' ? '紅' : '藍'}連`);
-                        }
+                        for(let i=0; i<colCount-1; i++) { if (matrix[i][0] === outcome) { totalOcc++; if (matrix[i].length > 1) streakCount++; } }
+                        if (totalOcc >= 3 && (streakCount / totalOcc) > 0.8) { conf += 20; if (!isDerived) weight[outcome] += w.streakRule; matchedPatterns.push(`逢${outcome === 'B' || outcome === 'R' ? '紅' : '藍'}連`); }
                     }
                 }
                 return { name: name, weight: weight, confidence: conf, matrix: matrix, patterns: matchedPatterns };
             },
 
             simulateNextAskRoad: function(matrix) {
-                let weight = { B: 0, P: 0 };
-                let conf = 0;
-                let colCount = matrix.length;
+                let weight = { B: 0, P: 0 }; let conf = 0; let colCount = matrix.length;
                 if (colCount > 2) {
-                    let lastLen = matrix[colCount - 1].length;
-                    let prevLen = matrix[colCount - 2].length;
-                    let lastOutcome = matrix[colCount - 1][0];
-                    let opposite = lastOutcome === 'B' ? 'P' : 'B';
-                    if (lastLen === prevLen) { weight[opposite] += 30; conf += 25; } 
-                    else if (lastLen < prevLen) { weight[lastOutcome] += 20; conf += 15; }
+                    let lastLen = matrix[colCount - 1].length; let prevLen = matrix[colCount - 2].length;
+                    let lastOutcome = matrix[colCount - 1][0]; let opposite = lastOutcome === 'B' ? 'P' : 'B';
+                    if (lastLen === prevLen) { weight[opposite] += 30; conf += 25; } else if (lastLen < prevLen) { weight[lastOutcome] += 20; conf += 15; }
                 }
                 return { weight: weight, confidence: conf };
             }
@@ -522,35 +493,72 @@
         }
 
         window.onload = function() {
-            initGrid('bead-plate-board', 6, 8);   
-            initGrid('big-road-board', 6, 36);    
-            initGrid('big-eye-board', 6, 18);     
-            initGrid('small-road-board', 6, 18);  
-            initGrid('roach-road-board', 6, 18);  
+            // ⭐️ 大幅增加網格數量 (配合滑動機制，支援 120局以上)
+            initGrid('bead-plate-board', 6, 22);   
+            initGrid('big-road-board', 6, 60);    
+            initGrid('big-eye-board', 6, 30);     
+            initGrid('small-road-board', 6, 30);  
+            initGrid('roach-road-board', 6, 30);  
             updateBankrollUI(); 
-            QuantumEngine.init(); // 啟動時讀取回測記憶
+            QuantumEngine.init(); 
         };
 
         function addRecord(result) {
             if (state.lastAiAction !== 'NONE' && state.currentBetAmount > 0) {
-                if (result === 'T') {
-                    // 和局退水
-                } else if (result === state.lastAiAction) {
-                    state.win++;
-                    state.netProfit += state.currentBetAmount;
-                    state.consecutiveLosses = 0; 
-                    state.fibIndex = Math.max(0, state.fibIndex - 2);
+                if (result === 'T') { } 
+                else if (result === state.lastAiAction) {
+                    state.win++; state.netProfit += state.currentBetAmount;
+                    state.consecutiveLosses = 0; state.fibIndex = Math.max(0, state.fibIndex - 2);
                 } else {
-                    state.loss++;
-                    state.netProfit -= state.currentBetAmount;
-                    state.consecutiveLosses++;
-                    state.fibIndex = Math.min(fibSequence.length - 1, state.fibIndex + 1);
+                    state.loss++; state.netProfit -= state.currentBetAmount;
+                    state.consecutiveLosses++; state.fibIndex = Math.min(fibSequence.length - 1, state.fibIndex + 1);
                 }
             }
             updateBankrollUI();
             state.records.push(result);
             renderBeadPlate();
             analyzeWithJS(); 
+        }
+
+        // 🆕 快速匯入數據功能
+        function importBatchData() {
+            const inputElement = document.getElementById('batch-input');
+            const rawStr = inputElement.value;
+            const newRecords = [];
+            
+            // 允許輸入英文或中文，忽略空格
+            for (let char of rawStr) {
+                let c = char.toUpperCase();
+                if (c === 'B' || c === '莊' || c === '庄') newRecords.push('B');
+                else if (c === 'P' || c === '閒' || c === '闲') newRecords.push('P');
+                else if (c === 'T' || c === '和') newRecords.push('T');
+            }
+
+            if (newRecords.length === 0) {
+                alert("未偵測到有效的牌局數據 (請輸入 B/P/T 或 莊/閒/和)");
+                return;
+            }
+
+            // 清空當前狀態 (不觸發 Google Drive 上傳，因為是補登歷史)
+            state.records = newRecords;
+            state.netProfit = 0;
+            state.win = 0;
+            state.loss = 0;
+            state.lastAiAction = 'NONE';
+            state.currentBetAmount = 0;
+            state.consecutiveLosses = 0;
+            state.fibIndex = 0;
+
+            // 重新渲染畫面
+            document.querySelectorAll('.grid-board td').forEach(td => td.innerHTML = '');
+            updateBankrollUI();
+            renderBeadPlate();
+            analyzeWithJS();
+
+            // 滑動至最新一局
+            document.querySelectorAll('.bead-plate, .big-road').forEach(el => el.scrollLeft = el.scrollWidth);
+            
+            inputElement.value = '';
         }
 
         function updateBankrollUI() {
@@ -562,16 +570,9 @@
             
             const profitUI = document.getElementById('total-profit');
             profitUI.innerText = state.netProfit >= 0 ? `+$${state.netProfit}` : `-$${Math.abs(state.netProfit)}`;
-            if (state.netProfit > 0) {
-                profitUI.style.color = 'var(--green-color)';
-                profitUI.style.textShadow = '0 0 15px rgba(16, 185, 129, 0.5)';
-            } else if (state.netProfit < 0) {
-                profitUI.style.color = 'var(--red-color)';
-                profitUI.style.textShadow = '0 0 15px rgba(239, 68, 68, 0.5)';
-            } else {
-                profitUI.style.color = 'var(--text-main)';
-                profitUI.style.textShadow = 'none';
-            }
+            if (state.netProfit > 0) { profitUI.style.color = 'var(--green-color)'; profitUI.style.textShadow = '0 0 15px rgba(16, 185, 129, 0.5)'; } 
+            else if (state.netProfit < 0) { profitUI.style.color = 'var(--red-color)'; profitUI.style.textShadow = '0 0 15px rgba(239, 68, 68, 0.5)'; } 
+            else { profitUI.style.color = 'var(--text-main)'; profitUI.style.textShadow = 'none'; }
 
             const totalPlays = state.win + state.loss;
             const winRate = totalPlays > 0 ? Math.round((state.win / totalPlays) * 100) : 0;
@@ -607,15 +608,13 @@
             recommendUI.classList.add('ai-thinking');
             
             const data = QuantumEngine.analyze(state.records);
-            
             const baseBet = parseInt(document.getElementById('base-bet').value) || 1000;
             const strategy = document.getElementById('bet-strategy').value;
             
             state.lastAiAction = data.action || 'NONE';
 
-            if (state.lastAiAction === 'NONE') {
-                state.currentBetAmount = 0;
-            } else {
+            if (state.lastAiAction === 'NONE') { state.currentBetAmount = 0; } 
+            else {
                 if (strategy === 'martingale') { state.currentBetAmount = baseBet * Math.pow(2, state.consecutiveLosses); } 
                 else if (strategy === 'fibonacci') { state.currentBetAmount = baseBet * fibSequence[state.fibIndex]; } 
                 else { state.currentBetAmount = baseBet; }
@@ -639,8 +638,7 @@
             if (data.cores_analysis) {
                 let coresHTML = '';
                 data.cores_analysis.forEach(core => {
-                    let recText = '無明顯方向';
-                    let recColor = '#64748b';
+                    let recText = '無明顯方向'; let recColor = '#64748b';
                     if (core.weight.B > core.weight.P) { recText = '傾向 莊/紅'; recColor = 'var(--red-color)'; }
                     else if (core.weight.P > core.weight.B) { recText = '傾向 閒/藍'; recColor = 'var(--blue-color)'; }
                     
@@ -663,6 +661,13 @@
                 if (data.cores_analysis[1].matrix) renderDerivedRoad(data.cores_analysis[1].matrix, 'big-eye-board', 'big-eye');
                 if (data.cores_analysis[2].matrix) renderDerivedRoad(data.cores_analysis[2].matrix, 'small-road-board', 'small');
                 if (data.cores_analysis[3].matrix) renderDerivedRoad(data.cores_analysis[3].matrix, 'roach-road-board', 'roach');
+            
+                // 滑動至最新一局
+                setTimeout(() => {
+                    document.querySelectorAll('.bead-plate, .big-road, .derived-roads').forEach(el => {
+                        el.scrollLeft = el.scrollWidth;
+                    });
+                }, 50);
             }
         }
 
@@ -675,12 +680,8 @@
                 let outcome = matrix[col][0]; 
                 let actualRow = 0;
                 for (let i = 0; i < rowLength; i++) {
-                    let renderCol = currentVisualCol;
-                    let renderRow = actualRow;
-                    if (renderRow >= maxRows) {
-                        renderRow = maxRows - 1; 
-                        renderCol += (actualRow - (maxRows - 1)); 
-                    }
+                    let renderCol = currentVisualCol; let renderRow = actualRow;
+                    if (renderRow >= maxRows) { renderRow = maxRows - 1; renderCol += (actualRow - (maxRows - 1)); }
                     const cell = document.getElementById(`big-road-board-${renderRow}-${renderCol}`);
                     if (cell) {
                         let color = outcome === 'B' ? 'var(--red-color)' : 'var(--blue-color)';
@@ -694,30 +695,21 @@
 
         function renderDerivedRoad(matrix, elementId, styleType) {
             document.querySelectorAll(`#${elementId} td`).forEach(td => td.innerHTML = '');
-            const maxRows = 6;
-            let currentVisualCol = 0;
+            const maxRows = 6; let currentVisualCol = 0;
             for (let col = 0; col < matrix.length; col++) {
                 let rowLength = matrix[col].length;
                 let outcome = matrix[col][0]; 
                 let actualRow = 0;
                 for (let i = 0; i < rowLength; i++) {
-                    let renderCol = currentVisualCol;
-                    let renderRow = actualRow;
-                    if (renderRow >= maxRows) {
-                        renderRow = maxRows - 1;
-                        renderCol += (actualRow - (maxRows - 1));
-                    }
+                    let renderCol = currentVisualCol; let renderRow = actualRow;
+                    if (renderRow >= maxRows) { renderRow = maxRows - 1; renderCol += (actualRow - (maxRows - 1)); }
                     const cell = document.getElementById(`${elementId}-${renderRow}-${renderCol}`);
                     if (cell) {
                         let color = outcome === 'R' ? 'var(--red-color)' : 'var(--blue-color)';
                         let content = '';
-                        if (styleType === 'big-eye') {
-                            content = `<div style="border: 2px solid ${color}; width: 8px; height: 8px; border-radius: 50%; margin: 0 auto; box-shadow: 0 0 2px ${color};"></div>`; 
-                        } else if (styleType === 'small') {
-                            content = `<div style="background-color: ${color}; width: 10px; height: 10px; border-radius: 50%; margin: 0 auto; box-shadow: 0 0 3px ${color};"></div>`; 
-                        } else if (styleType === 'roach') {
-                            content = `<div style="color: ${color}; font-size: 16px; font-weight: 800; line-height: 1; transform: rotate(15deg); text-shadow: 0 0 2px ${color};">/</div>`; 
-                        }
+                        if (styleType === 'big-eye') { content = `<div style="border: 2px solid ${color}; width: 8px; height: 8px; border-radius: 50%; margin: 0 auto; box-shadow: 0 0 2px ${color};"></div>`; } 
+                        else if (styleType === 'small') { content = `<div style="background-color: ${color}; width: 10px; height: 10px; border-radius: 50%; margin: 0 auto; box-shadow: 0 0 3px ${color};"></div>`; } 
+                        else if (styleType === 'roach') { content = `<div style="color: ${color}; font-size: 16px; font-weight: 800; line-height: 1; transform: rotate(15deg); text-shadow: 0 0 2px ${color};">/</div>`; }
                         cell.innerHTML = content;
                     }
                     actualRow++;
@@ -728,45 +720,21 @@
 
         async function resetBoard() {
             if (state.records.length === 0) return;
-
             const recommendUI = document.getElementById('ai-recommend');
             recommendUI.innerText = "⏳ 同步至 Google Drive...";
-            recommendUI.style.color = "#fff";
-            recommendUI.style.textShadow = 'none';
+            recommendUI.style.color = "#fff"; recommendUI.style.textShadow = 'none';
 
-            const shoeData = {
-                records: state.records,
-                profit: state.netProfit,
-                status: `AI WinRate: ${document.getElementById('win-rate').innerText}`
-            };
-
+            const shoeData = { records: state.records, profit: state.netProfit, status: `AI WinRate: ${document.getElementById('win-rate').innerText}` };
             try {
                 const gasUrl = "https://script.google.com/macros/s/AKfycbwRoL5wgWJeSlnyhba2zUpPWZTqxjVDwEtJNhtNnycw6hppg2FkmCNqxCDm-IFcgH76/exec"; 
-                await fetch(gasUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(shoeData)
-                });
+                await fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(shoeData) });
                 console.log("數據成功上傳！");
-            } catch (error) {
-                console.error("上傳失敗:", error);
-            }
+            } catch (error) { console.error("上傳失敗:", error); }
 
-            state.records = [];
-            state.netProfit = 0;
-            state.win = 0;
-            state.loss = 0;
-            state.lastAiAction = 'NONE';
-            state.currentBetAmount = 0;
-            state.consecutiveLosses = 0;
-            state.fibIndex = 0;
-
+            state.records = []; state.netProfit = 0; state.win = 0; state.loss = 0; state.lastAiAction = 'NONE'; state.currentBetAmount = 0; state.consecutiveLosses = 0; state.fibIndex = 0;
             document.querySelectorAll('.grid-board td').forEach(td => td.innerHTML = '');
             updateBankrollUI();
-            
-            recommendUI.innerText = "等待數據累積...";
-            recommendUI.style.color = "var(--gold-color)";
-            document.getElementById('bet-amount').innerText = "$0";
+            recommendUI.innerText = "等待數據累積..."; recommendUI.style.color = "var(--gold-color)"; document.getElementById('bet-amount').innerText = "$0";
             
             document.getElementById('ai-cores-container').innerHTML = `
                 <div class="core-card"><div class="core-name">大路特徵</div><div class="core-rec" style="color:#64748b;">無</div><div class="core-conf">等待中</div></div>
