@@ -199,44 +199,81 @@
         .btn-action { background: linear-gradient(135deg, #475569, #1e293b); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
         .btn-import { background: linear-gradient(135deg, #f59e0b, #d97706); font-size: 0.95rem; padding: 8px 16px; border-radius: 6px;}
 
-        /* 五路矩陣 (加入水平滑動，解除長度限制) */
+        /* 五路矩陣 (全新動態自適應佈局) */
         .roads-container {
-            display: grid;
-            grid-template-columns: minmax(200px, 1fr) minmax(400px, 3fr);
+            display: flex;
             gap: 0;
             background-color: var(--grid-bg);
             border-radius: 12px;
             overflow: hidden;
             border: 2px solid var(--grid-section-line);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-            height: 480px;
+            height: auto;
         }
 
-        /* 設定內部區塊可以橫向捲動 */
-        .bead-plate { border-right: 3px solid var(--grid-section-line); overflow-x: auto; overflow-y: hidden; }
-        .right-roads { display: flex; flex-direction: column; height: 100%; overflow: hidden;}
-        .big-road { flex: 1.2; border-bottom: 3px solid var(--grid-section-line); overflow-x: auto; overflow-y: hidden; }
-        .derived-roads { flex: 1; display: flex; overflow-x: auto; overflow-y: hidden; }
-        .derived-roads > div { flex: 1; border-right: 2px solid var(--grid-section-line); min-width: 250px; }
-        .derived-roads > div:last-child { border-right: none; }
-
-        /* 修改格線屬性，保證不壓縮變形 */
-        .grid-board { border-collapse: collapse; table-layout: fixed; }
-        .grid-board td { 
-            border: 1px solid var(--grid-line); 
-            min-width: 26px; /* 保證格子大小絕對一致 */
-            max-width: 26px;
-            height: 26px; 
-            text-align: center; 
-            vertical-align: middle; 
-            position: relative; 
-            padding: 0; 
+        /* 嚴格的水平滾動容器設置 */
+        .bead-plate {
+            width: 25%;
+            border-right: 3px solid var(--grid-section-line);
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+        
+        .right-roads {
+            width: 75%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .big-road {
+            flex: 1.2;
+            border-bottom: 3px solid var(--grid-section-line);
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+        
+        .derived-roads {
+            flex: 1;
+            display: flex;
+        }
+        
+        .derived-roads > div {
+            flex: 1;
+            border-right: 2px solid var(--grid-section-line);
+            overflow-x: auto;
+            overflow-y: hidden;
+            background: rgba(0,0,0,0.2);
+        }
+        
+        .derived-roads > div:last-child {
+            border-right: none;
         }
 
-        /* 隱藏捲軸美化 (Webkit) */
-        ::-webkit-scrollbar { height: 8px; width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--grid-bg); }
-        ::-webkit-scrollbar-thumb { background: var(--grid-section-line); border-radius: 4px; }
+        /* 動態生成的網格，保證絕對正方形，超出才滾動 */
+        .grid-board {
+            border-collapse: collapse;
+            table-layout: fixed;
+            width: max-content;
+            min-width: 100%;
+        }
+        
+        .grid-board td {
+            border: 1px solid var(--grid-line);
+            width: 24px;
+            min-width: 24px;
+            max-width: 24px;
+            height: 24px;
+            text-align: center;
+            vertical-align: middle;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* 自訂科技感滾動條 */
+        ::-webkit-scrollbar { height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-top: 1px solid var(--grid-line); }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
         
         @keyframes pulse {
@@ -264,7 +301,7 @@
             </label>
         </div>
 
-        <!-- 🆕 快速匯入數據區 -->
+        <!-- 快速匯入數據區 -->
         <div class="strategy-panel" style="margin-top: -5px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-bottom: 0; border-bottom: none;">
             <label style="display:flex; align-items:center; gap:10px;">快速匯入已開牌局: 
                 <input type="text" id="batch-input" placeholder="例: BPBTPP 或 莊閒莊和閒" style="width: 250px;">
@@ -293,7 +330,7 @@
         </div>
     </div>
 
-    <!-- 👑 AI 獨立戰情分析室 -->
+    <!-- AI 獨立戰情分析室 -->
     <div class="ai-panel">
         <div class="ai-main-result">
             <span class="ai-main-title">🧠 AI 引擎最終決策 <span id="ai-version-badge" style="font-size: 0.7rem; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; margin-left: 8px;">預設權重</span></span>
@@ -318,13 +355,13 @@
 
     <!-- 五路矩陣面板 -->
     <div class="roads-container">
-        <div class="bead-plate" id="bead-plate-board"></div>
+        <div class="bead-plate" id="bead-plate-container"></div>
         <div class="right-roads">
-            <div class="big-road" id="big-road-board"></div>
+            <div class="big-road" id="big-road-container"></div>
             <div class="derived-roads">
-                <div class="big-eye" id="big-eye-board"></div>
-                <div class="small-road" id="small-road-board"></div>
-                <div class="roach-road" id="roach-road-board"></div>
+                <div class="big-eye" id="big-eye-container"></div>
+                <div class="small-road" id="small-road-container"></div>
+                <div class="roach-road" id="roach-road-container"></div>
             </div>
         </div>
     </div>
@@ -477,31 +514,22 @@
         };
 
         // ==========================================
-        // 🎨 前端 UI 與操作邏輯
+        // 🎨 前端 UI 與操作邏輯 (動態網格 + 完美長龍轉彎)
         // ==========================================
 
-        function initGrid(elementId, rows, cols) {
-            const container = document.getElementById(elementId);
-            let table = '<table class="grid-board">';
-            for (let r = 0; r < rows; r++) {
-                table += '<tr>';
-                for (let c = 0; c < cols; c++) { table += `<td id="${elementId}-${r}-${c}"></td>`; }
-                table += '</tr>';
-            }
-            table += '</table>';
-            container.innerHTML = table;
-        }
-
         window.onload = function() {
-            // ⭐️ 大幅增加網格數量 (配合滑動機制，支援 120局以上)
-            initGrid('bead-plate-board', 6, 22);   
-            initGrid('big-road-board', 6, 60);    
-            initGrid('big-eye-board', 6, 30);     
-            initGrid('small-road-board', 6, 30);  
-            initGrid('roach-road-board', 6, 30);  
             updateBankrollUI(); 
-            QuantumEngine.init(); 
+            QuantumEngine.init();
+            renderAllEmpty();
         };
+
+        function renderAllEmpty() {
+            renderBeadPlate();
+            renderRoadGrid([], 'big-road-container', 'big-road', 30);
+            renderRoadGrid([], 'big-eye-container', 'big-eye', 20);
+            renderRoadGrid([], 'small-road-container', 'small', 20);
+            renderRoadGrid([], 'roach-road-container', 'roach', 20);
+        }
 
         function addRecord(result) {
             if (state.lastAiAction !== 'NONE' && state.currentBetAmount > 0) {
@@ -520,51 +548,31 @@
             analyzeWithJS(); 
         }
 
-        // 🆕 快速匯入數據功能
         function importBatchData() {
             const inputElement = document.getElementById('batch-input');
             const rawStr = inputElement.value;
             const newRecords = [];
-            
-            // 允許輸入英文或中文，忽略空格
             for (let char of rawStr) {
                 let c = char.toUpperCase();
                 if (c === 'B' || c === '莊' || c === '庄') newRecords.push('B');
                 else if (c === 'P' || c === '閒' || c === '闲') newRecords.push('P');
                 else if (c === 'T' || c === '和') newRecords.push('T');
             }
+            if (newRecords.length === 0) { alert("未偵測到有效的牌局數據"); return; }
 
-            if (newRecords.length === 0) {
-                alert("未偵測到有效的牌局數據 (請輸入 B/P/T 或 莊/閒/和)");
-                return;
-            }
-
-            // 清空當前狀態 (不觸發 Google Drive 上傳，因為是補登歷史)
             state.records = newRecords;
-            state.netProfit = 0;
-            state.win = 0;
-            state.loss = 0;
-            state.lastAiAction = 'NONE';
-            state.currentBetAmount = 0;
-            state.consecutiveLosses = 0;
-            state.fibIndex = 0;
+            state.netProfit = 0; state.win = 0; state.loss = 0; state.lastAiAction = 'NONE';
+            state.currentBetAmount = 0; state.consecutiveLosses = 0; state.fibIndex = 0;
 
-            // 重新渲染畫面
-            document.querySelectorAll('.grid-board td').forEach(td => td.innerHTML = '');
             updateBankrollUI();
             renderBeadPlate();
             analyzeWithJS();
-
-            // 滑動至最新一局
-            document.querySelectorAll('.bead-plate, .big-road').forEach(el => el.scrollLeft = el.scrollWidth);
-            
             inputElement.value = '';
         }
 
         function updateBankrollUI() {
             const initialBankroll = parseInt(document.getElementById('initial-bankroll').value) || 0;
             const currentBalance = initialBankroll + state.netProfit;
-            
             const balanceUI = document.getElementById('current-balance');
             balanceUI.innerText = `$${currentBalance}`;
             
@@ -579,19 +587,31 @@
             document.getElementById('win-rate').innerText = `${state.win}勝 ${state.loss}負 (${winRate}%)`;
         }
 
+        // 珠盤路動態生成
         function renderBeadPlate() {
-            document.querySelectorAll('#bead-plate-board td').forEach(td => td.innerHTML = '');
-            const rows = 6;
-            state.records.forEach((res, index) => {
-                const c = Math.floor(index / rows);
-                const r = index % rows;            
-                const cell = document.getElementById(`bead-plate-board-${r}-${c}`);
-                if (cell) {
-                    let color = res === 'B' ? 'var(--red-color)' : (res === 'P' ? 'var(--blue-color)' : 'var(--green-color)');
-                    let text = res === 'B' ? '莊' : (res === 'P' ? '閒' : '和');
-                    cell.innerHTML = `<div style="background-color: ${color}; color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin: 0 auto; box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.5); text-shadow: 1px 1px 1px rgba(0,0,0,0.5);">${text}</div>`;
+            const maxRows = 6;
+            const baseCols = 10; 
+            let totalCols = Math.ceil(state.records.length / maxRows);
+            if (totalCols < baseCols) totalCols = baseCols;
+
+            let html = '<table class="grid-board">';
+            for (let r = 0; r < maxRows; r++) {
+                html += '<tr>';
+                for (let c = 0; c < totalCols; c++) {
+                    let index = c * maxRows + r;
+                    let res = state.records[index];
+                    let cellContent = '';
+                    if (res) {
+                        let color = res === 'B' ? 'var(--red-color)' : (res === 'P' ? 'var(--blue-color)' : 'var(--green-color)');
+                        let text = res === 'B' ? '莊' : (res === 'P' ? '閒' : '和');
+                        cellContent = `<div style="background-color: ${color}; color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin: 0 auto; box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.5); text-shadow: 1px 1px 1px rgba(0,0,0,0.5);">${text}</div>`;
+                    }
+                    html += `<td>${cellContent}</td>`;
                 }
-            });
+                html += '</tr>';
+            }
+            html += '</table>';
+            document.getElementById('bead-plate-container').innerHTML = html;
         }
 
         function undoRecord() {
@@ -657,65 +677,84 @@
                 });
                 coresContainer.innerHTML = coresHTML;
 
-                if (data.cores_analysis[0].matrix) renderBigRoad(data.cores_analysis[0].matrix);
-                if (data.cores_analysis[1].matrix) renderDerivedRoad(data.cores_analysis[1].matrix, 'big-eye-board', 'big-eye');
-                if (data.cores_analysis[2].matrix) renderDerivedRoad(data.cores_analysis[2].matrix, 'small-road-board', 'small');
-                if (data.cores_analysis[3].matrix) renderDerivedRoad(data.cores_analysis[3].matrix, 'roach-road-board', 'roach');
+                // 畫出大路與下三路
+                renderRoadGrid(data.cores_analysis[0].matrix, 'big-road-container', 'big-road', 30);
+                renderRoadGrid(data.cores_analysis[1].matrix, 'big-eye-container', 'big-eye', 20);
+                renderRoadGrid(data.cores_analysis[2].matrix, 'small-road-container', 'small', 20);
+                renderRoadGrid(data.cores_analysis[3].matrix, 'roach-road-container', 'roach', 20);
             
-                // 滑動至最新一局
+                // 新增資料後，所有路紙自動平滑滾動到最右側
                 setTimeout(() => {
-                    document.querySelectorAll('.bead-plate, .big-road, .derived-roads').forEach(el => {
-                        el.scrollLeft = el.scrollWidth;
+                    document.querySelectorAll('.bead-plate, .big-road, .derived-roads > div').forEach(el => {
+                        el.scrollTo({ left: el.scrollWidth, behavior: 'smooth' });
                     });
                 }, 50);
             }
         }
 
-        function renderBigRoad(matrix) {
-            document.querySelectorAll('#big-road-board td').forEach(td => td.innerHTML = '');
-            const maxRows = 6; 
+        // 🌟 核心升級：全新動態網格生成與精準長龍轉彎物理引擎
+        function renderRoadGrid(matrix, containerId, styleType, baseCols) {
+            const maxRows = 6;
+            let logicalGrid = {}; 
             let currentVisualCol = 0;
-            for (let col = 0; col < matrix.length; col++) {
-                let rowLength = matrix[col].length;
-                let outcome = matrix[col][0]; 
-                let actualRow = 0;
-                for (let i = 0; i < rowLength; i++) {
-                    let renderCol = currentVisualCol; let renderRow = actualRow;
-                    if (renderRow >= maxRows) { renderRow = maxRows - 1; renderCol += (actualRow - (maxRows - 1)); }
-                    const cell = document.getElementById(`big-road-board-${renderRow}-${renderCol}`);
-                    if (cell) {
-                        let color = outcome === 'B' ? 'var(--red-color)' : 'var(--blue-color)';
-                        cell.innerHTML = `<div style="border: 2px solid ${color}; width: 14px; height: 14px; border-radius: 50%; margin: 0 auto; box-shadow: inset 0 0 3px ${color}, 0 0 3px ${color};"></div>`;
-                    }
-                    actualRow++;
-                }
-                currentVisualCol++;
-            }
-        }
+            let maxCol = baseCols - 1; 
 
-        function renderDerivedRoad(matrix, elementId, styleType) {
-            document.querySelectorAll(`#${elementId} td`).forEach(td => td.innerHTML = '');
-            const maxRows = 6; let currentVisualCol = 0;
+            // 1. 物理碰撞模擬
             for (let col = 0; col < matrix.length; col++) {
-                let rowLength = matrix[col].length;
-                let outcome = matrix[col][0]; 
-                let actualRow = 0;
-                for (let i = 0; i < rowLength; i++) {
-                    let renderCol = currentVisualCol; let renderRow = actualRow;
-                    if (renderRow >= maxRows) { renderRow = maxRows - 1; renderCol += (actualRow - (maxRows - 1)); }
-                    const cell = document.getElementById(`${elementId}-${renderRow}-${renderCol}`);
-                    if (cell) {
-                        let color = outcome === 'R' ? 'var(--red-color)' : 'var(--blue-color)';
-                        let content = '';
-                        if (styleType === 'big-eye') { content = `<div style="border: 2px solid ${color}; width: 8px; height: 8px; border-radius: 50%; margin: 0 auto; box-shadow: 0 0 2px ${color};"></div>`; } 
-                        else if (styleType === 'small') { content = `<div style="background-color: ${color}; width: 10px; height: 10px; border-radius: 50%; margin: 0 auto; box-shadow: 0 0 3px ${color};"></div>`; } 
-                        else if (styleType === 'roach') { content = `<div style="color: ${color}; font-size: 16px; font-weight: 800; line-height: 1; transform: rotate(15deg); text-shadow: 0 0 2px ${color};">/</div>`; }
-                        cell.innerHTML = content;
+                let run = matrix[col];
+                let outcome = run[0];
+                let r = 0;
+                let c = currentVisualCol;
+
+                for (let i = 0; i < run.length; i++) {
+                    if (i === 0) {
+                        r = 0; c = currentVisualCol;
+                        // 尋找空欄位
+                        while (logicalGrid[`0,${c}`]) { c++; }
+                        currentVisualCol = c;
+                    } else {
+                        // 核心：若碰到底部，或下一格已被佔用(撞擊其他長龍)，則向右轉彎
+                        if (r + 1 < maxRows && !logicalGrid[`${r + 1},${c}`]) {
+                            r++; // 往下
+                        } else {
+                            c++; // 往右 (長龍轉彎)
+                        }
                     }
-                    actualRow++;
+                    logicalGrid[`${r},${c}`] = outcome;
+                    if (c > maxCol) maxCol = c;
                 }
                 currentVisualCol++;
             }
+
+            // 2. 動態生成網格 HTML
+            let totalCols = maxCol + 2; // 預留一兩格空白
+            if (totalCols < baseCols) totalCols = baseCols;
+
+            let html = '<table class="grid-board">';
+            for (let r = 0; r < maxRows; r++) {
+                html += '<tr>';
+                for (let c = 0; c < totalCols; c++) {
+                    let cellContent = '';
+                    let outcome = logicalGrid[`${r},${c}`];
+                    
+                    if (outcome) {
+                        let color = (outcome === 'B' || outcome === 'R') ? 'var(--red-color)' : 'var(--blue-color)';
+                        if (styleType === 'big-road') {
+                            cellContent = `<div style="border: 2px solid ${color}; width: 14px; height: 14px; border-radius: 50%; margin: 0 auto; box-shadow: inset 0 0 3px ${color}, 0 0 3px ${color};"></div>`;
+                        } else if (styleType === 'big-eye') {
+                            cellContent = `<div style="border: 2px solid ${color}; width: 8px; height: 8px; border-radius: 50%; margin: 0 auto; box-shadow: 0 0 2px ${color};"></div>`;
+                        } else if (styleType === 'small') {
+                            cellContent = `<div style="background-color: ${color}; width: 10px; height: 10px; border-radius: 50%; margin: 0 auto; box-shadow: 0 0 3px ${color};"></div>`;
+                        } else if (styleType === 'roach') {
+                            cellContent = `<div style="color: ${color}; font-size: 16px; font-weight: 800; line-height: 1; transform: rotate(15deg); text-shadow: 0 0 2px ${color};">/</div>`;
+                        }
+                    }
+                    html += `<td>${cellContent}</td>`;
+                }
+                html += '</tr>';
+            }
+            html += '</table>';
+            document.getElementById(containerId).innerHTML = html;
         }
 
         async function resetBoard() {
@@ -732,16 +771,16 @@
             } catch (error) { console.error("上傳失敗:", error); }
 
             state.records = []; state.netProfit = 0; state.win = 0; state.loss = 0; state.lastAiAction = 'NONE'; state.currentBetAmount = 0; state.consecutiveLosses = 0; state.fibIndex = 0;
-            document.querySelectorAll('.grid-board td').forEach(td => td.innerHTML = '');
+            
             updateBankrollUI();
             recommendUI.innerText = "等待數據累積..."; recommendUI.style.color = "var(--gold-color)"; document.getElementById('bet-amount').innerText = "$0";
-            
             document.getElementById('ai-cores-container').innerHTML = `
                 <div class="core-card"><div class="core-name">大路特徵</div><div class="core-rec" style="color:#64748b;">無</div><div class="core-conf">等待中</div></div>
                 <div class="core-card"><div class="core-name">大眼仔</div><div class="core-rec" style="color:#64748b;">無</div><div class="core-conf">等待中</div></div>
                 <div class="core-card"><div class="core-name">小路</div><div class="core-rec" style="color:#64748b;">無</div><div class="core-conf">等待中</div></div>
                 <div class="core-card"><div class="core-name">曱甴路</div><div class="core-rec" style="color:#64748b;">無</div><div class="core-conf">等待中</div></div>
             `;
+            renderAllEmpty();
         }
     </script>
 </body>
