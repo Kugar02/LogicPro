@@ -265,7 +265,7 @@
             padding: 0; box-sizing: border-box;
         }
 
-        /* 👑 修正: 珠盤路格線比例放大，填滿高度 */
+        /* 珠盤路格線比例 */
         .bead-plate-board td {
             width: 48px; min-width: 48px; max-width: 48px;
             height: 48px; 
@@ -367,7 +367,7 @@
     </div>
 
     <script>
-        // 👑 修正1: 建立歷史快照陣列，用於完美撤銷狀態
+        // 建立歷史快照陣列，用於完美撤銷狀態
         const state = {
             records: [],
             history: [], 
@@ -406,7 +406,6 @@
                 }
             },
 
-            // 👑 修正3: 加入大路和局(Tie)整合引擎
             buildBigRoadMatrix: function(rawSeq) {
                 let matrix = [];
                 let currentCol = -1;
@@ -438,23 +437,20 @@
                 const dynamicP = total > 0 ? (this.THEORETICAL_P * (1 - smoothing)) + ((pCount / total * 100) * smoothing) : this.THEORETICAL_P;
                 const baseWeight = { B: dynamicB, P: dynamicP };
 
-                // 產生帶有和局資訊的矩陣 (供大路渲染使用)
                 const bigRoadMatrixWithTies = this.buildBigRoadMatrix(rawRecords);
-                // 產生純莊閒矩陣 (供探路與特徵分析使用)
                 const bigRoadMatrix = this.buildMatrix(records);
                 const matBigEye = this.buildMatrix(this.deriveSequence(bigRoadMatrix, 1));
                 const matSmall = this.buildMatrix(this.deriveSequence(bigRoadMatrix, 2));
                 const matRoach = this.buildMatrix(this.deriveSequence(bigRoadMatrix, 3));
 
                 const bigRoad = this.detectPatterns('大路', bigRoadMatrix, false);
-                bigRoad.matrix = bigRoadMatrixWithTies; // 覆蓋為帶有和局的矩陣以供畫圖
+                bigRoad.matrix = bigRoadMatrixWithTies; 
                 const bigEyeBoy = this.detectPatterns('大眼仔', matBigEye, true);
                 const smallRoad = this.detectPatterns('小路', matSmall, true);
                 const roachRoad = this.detectPatterns('曱甴路', matRoach, true);
 
                 const cores_analysis = [bigRoad, bigEyeBoy, smallRoad, roachRoad];
 
-                // 👑 修正4: 就算數據不足，也回傳陣列，讓畫面能徹底清除或重繪
                 if (records.length < 2) {
                     return { status: "waiting", recommendation: "等待數據累積...", action: "NONE", bet_amount: 0, cores_analysis: cores_analysis };
                 }
@@ -552,18 +548,19 @@
             updateBankrollUI(); 
             QuantumEngine.init();
             renderAllEmpty();
+            // 加入畫面縮放監聽，確保自適應精準
+            window.addEventListener('resize', () => { if(state.records.length > 0) analyzeWithJS(); else renderAllEmpty(); });
         };
 
         function renderAllEmpty() {
             renderBeadPlate();
-            renderRoadGrid([], 'big-road-container', 'big-road', 30);
-            renderRoadGrid([], 'big-eye-container', 'big-eye', 20);
-            renderRoadGrid([], 'small-road-container', 'small', 20);
-            renderRoadGrid([], 'roach-road-container', 'roach', 20);
+            renderRoadGrid([], 'big-road-container', 'big-road');
+            renderRoadGrid([], 'big-eye-container', 'big-eye');
+            renderRoadGrid([], 'small-road-container', 'small');
+            renderRoadGrid([], 'roach-road-container', 'roach');
         }
 
         function addRecord(result) {
-            // 👑 修正1: 寫入新紀錄前，先保存當前所有狀態的「歷史快照」
             state.history.push({
                 win: state.win,
                 loss: state.loss,
@@ -603,7 +600,7 @@
             if (newRecords.length === 0) { alert("未偵測到有效的牌局數據"); return; }
 
             state.records = newRecords;
-            state.history = []; // 匯入數據會清除撤銷記憶
+            state.history = []; 
             state.netProfit = 0; state.win = 0; state.loss = 0; state.lastAiAction = 'NONE';
             state.currentBetAmount = 0; state.consecutiveLosses = 0; state.fibIndex = 0;
 
@@ -613,7 +610,6 @@
             inputElement.value = '';
         }
 
-        // 👑 修正1: 讀取歷史快照，完美還原上一手資金狀態
         function undoRecord() {
             if(state.records.length > 0) {
                 state.records.pop();
@@ -650,10 +646,13 @@
             document.getElementById('win-rate').innerText = `${state.win}勝 ${state.loss}負 (${winRate}%)`;
         }
 
-        // 👑 修正5: 珠盤路格子尺寸放大，填滿下方空間
+        // 👑 修正: 珠盤路動態偵測容器寬度
         function renderBeadPlate() {
             const maxRows = 6;
-            const baseCols = 8; 
+            const container = document.getElementById('bead-plate-container');
+            // 動態計算當前畫面下，剛好填滿且不需要捲動的列數 (每格 48px)
+            let baseCols = Math.max(6, Math.floor((container.clientWidth - 5) / 48));
+
             let totalCols = Math.ceil(state.records.length / maxRows);
             if (totalCols < baseCols) totalCols = baseCols;
 
@@ -674,7 +673,7 @@
                 html += '</tr>';
             }
             html += '</table>';
-            document.getElementById('bead-plate-container').innerHTML = html;
+            container.innerHTML = html;
         }
 
         function analyzeWithJS() {
@@ -732,10 +731,11 @@
                 });
                 coresContainer.innerHTML = coresHTML;
 
-                renderRoadGrid(data.cores_analysis[0].matrix, 'big-road-container', 'big-road', 30);
-                renderRoadGrid(data.cores_analysis[1].matrix, 'big-eye-container', 'big-eye', 20);
-                renderRoadGrid(data.cores_analysis[2].matrix, 'small-road-container', 'small', 20);
-                renderRoadGrid(data.cores_analysis[3].matrix, 'roach-road-container', 'roach', 20);
+                // 移除硬編碼的列數，交由動態寬度計算
+                renderRoadGrid(data.cores_analysis[0].matrix, 'big-road-container', 'big-road');
+                renderRoadGrid(data.cores_analysis[1].matrix, 'big-eye-container', 'big-eye');
+                renderRoadGrid(data.cores_analysis[2].matrix, 'small-road-container', 'small');
+                renderRoadGrid(data.cores_analysis[3].matrix, 'roach-road-container', 'roach');
             
                 setTimeout(() => {
                     document.querySelectorAll('.bead-plate, .big-road, .derived-roads > div').forEach(el => {
@@ -745,9 +745,14 @@
             }
         }
 
-        // 👑 修正2, 3, 4: 下三路紅藍筆校正、大路和局繪製、撤銷完全淨空
-        function renderRoadGrid(matrix, containerId, styleType, baseCols) {
+        // 👑 修正: 讀取容器動態寬度，實現只有超過視窗時才出現捲軸
+        function renderRoadGrid(matrix, containerId, styleType) {
             const maxRows = 6;
+            const container = document.getElementById(containerId);
+            
+            // 動態精準計算可以容納的基礎列數 (扣除邊框誤差，每格 24px)
+            let baseCols = Math.max(8, Math.floor((container.clientWidth - 5) / 24));
+
             let logicalGrid = {}; 
             let currentVisualCol = 0;
             let maxCol = baseCols - 1; 
@@ -773,7 +778,7 @@
                 currentVisualCol++;
             }
 
-            let totalCols = maxCol + 2; 
+            let totalCols = maxCol + 1; 
             if (totalCols < baseCols) totalCols = baseCols;
 
             let html = '<table class="grid-board">';
@@ -784,17 +789,14 @@
                     let cellData = logicalGrid[`${r},${c}`];
                     
                     if (cellData) {
-                        // 判斷是單純字串(下三路)還是物件(大路含和局)
                         let outcome = typeof cellData === 'string' ? cellData : cellData.outcome;
                         let ties = typeof cellData === 'string' ? 0 : cellData.ties;
                         
-                        // 修正2: 下三路的紅藍代表規律與混亂(R/B)，大路的紅藍代表莊閒(B/P)
                         let color = (styleType === 'big-road') 
                                     ? (outcome === 'B' ? 'var(--red-color)' : 'var(--blue-color)')
                                     : (outcome === 'R' ? 'var(--red-color)' : 'var(--blue-color)');
 
                         if (styleType === 'big-road') {
-                            // 修正3: 繪製和局綠線與數字
                             let tieLine = ties > 0 ? `<div style="position:absolute; top:50%; left: -2px; right: -2px; height: 3px; background-color: var(--green-color); transform: translateY(-50%) rotate(-45deg);"></div>` : '';
                             if (ties > 1) {
                                 tieLine += `<div style="position:absolute; top:-8px; left:12px; font-size:11px; font-weight:900; color:var(--green-color); z-index:10; text-shadow: 0 0 2px black;">${ties}</div>`;
@@ -813,7 +815,7 @@
                 html += '</tr>';
             }
             html += '</table>';
-            document.getElementById(containerId).innerHTML = html;
+            container.innerHTML = html;
         }
 
         async function resetBoard() {
