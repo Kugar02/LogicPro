@@ -1,8 +1,10 @@
 <?php
+// 允許跨域請求與設定回傳 JSON 格式
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Content-Type: application/json');
 
+// 接收前端 JS 傳來的開牌紀錄 (Array: ['B', 'P', 'B', 'B', ...])
 $input = file_get_contents('php://input');
 $records = json_decode($input, true);
 
@@ -19,6 +21,7 @@ class QuantumBaccaratEngine {
     const THEORETICAL_P = 49.32;
 
     public function __construct($records) {
+        // 過濾掉和局(T)，因為標準打法中，和局不影響大路與下三路的走向判斷
         $this->records = array_filter($records, function($val) {
             return $val === 'B' || $val === 'P';
         });
@@ -28,7 +31,6 @@ class QuantumBaccaratEngine {
     /**
      * 1. 動態天生勝率 (Dynamic Base Weight)
      * 根據當前牌靴的實際開牌比例，動態微調天生勝率。
-     * 牌局越長，當前牌靴的實際偏差權重佔比越高。
      */
     private function calculateDynamicBaseWeight() {
         $total = count($this->records);
@@ -41,7 +43,7 @@ class QuantumBaccaratEngine {
         $actualPRate = ($pCount / $total) * 100;
 
         // 動態平滑係數 (Smoothing Factor)：前 10 局偏重理論值，之後逐漸偏重實際盤勢
-        $smoothing = min($total / 30, 0.8); // 最高 80% 參考當前靴實際盤勢
+        $smoothing = min($total / 30, 0.8);
 
         $dynamicB = (self::THEORETICAL_B * (1 - $smoothing)) + ($actualBRate * $smoothing);
         $dynamicP = (self::THEORETICAL_P * (1 - $smoothing)) + ($actualPRate * $smoothing);
@@ -50,30 +52,92 @@ class QuantumBaccaratEngine {
     }
 
     /**
-     * 2. 特徵分析引擎 (通用於四大路)
-     * 分析 7 大特徵：「單跳」、「雙跳」、「龍」、「房廳」、「逢跳連」、「齊頭對齊」、「排排連」
+     * A. 構建大路二維矩陣 (Big Road Matrix)
+     * 將流水帳轉換為直欄橫列，這是判斷所有路單特徵的基礎。
+     */
+    private function buildBigRoadMatrix() {
+        $matrix = [];
+        $currentCol = -1;
+        $lastResult = null;
+
+        foreach ($this->records as $result) {
+            if ($result !== $lastResult) {
+                // 遇到不同結果 (例如 B 換到 P)：新增一列 (Column)
+                $currentCol++;
+                $matrix[$currentCol] = [];
+            }
+            // 繼續在當前列往下堆疊
+            $matrix[$currentCol][] = $result;
+            $lastResult = $result;
+        }
+        return $matrix;
+    }
+
+    /**
+     * B. 大路特徵精準判定 (包含齊頭對齊、單跳、長龍)
+     */
+    private function analyzeBigRoadPatterns($matrix) {
+        $weight = ['B' => 0, 'P' => 0];
+        $confidence = 0;
+        $patterns = [];
+
+        $colCount = count($matrix);
+        if ($colCount < 2) {
+            return ['name' => '大路', 'weight' => $weight, 'confidence' => $confidence, 'patterns' => $patterns, 'matrix' => $matrix];
+        }
+
+        // 取得最新的一列 (目前正在開的這條路) 與上一列
+        $lastColIndex = $colCount - 1;
+        $currentCol = $matrix[$lastColIndex];
+        $prevCol = $matrix[$lastColIndex - 1];
+
+        $currentLen = count($currentCol);
+        $prevLen = count($prevCol);
+        $currentOutcome = $currentCol[0];
+        $opposite = ($currentOutcome === 'B') ? 'P' : 'B';
+
+        // 特徵 1：【齊頭對齊】(極高可信度防禦/攻擊點)
+        if ($currentLen == $prevLen && $currentLen >= 2) {
+            $patterns[] = "齊頭對齊 (臨界點)";
+            $confidence += 35;
+            $weight[$opposite] += 25; // 強烈建議反打，維持齊頭狀態
+        }
+
+        // 特徵 2：【長龍】
+        if ($currentLen >= 4) {
+            $patterns[] = "長龍現身";
+            $confidence += 25;
+            $weight[$currentOutcome] += 15; // 順打當前結果
+        }
+
+        // 特徵 3：【單跳】
+        if ($colCount >= 4) {
+            if ($currentLen == 1 && count($matrix[$lastColIndex - 1]) == 1 && count($matrix[$lastColIndex - 2]) == 1) {
+                $patterns[] = "單跳規律";
+                $confidence += 20;
+                $weight[$opposite] += 15; // 預期繼續單跳
+            }
+        }
+
+        return [
+            'name' => '大路',
+            'weight' => $weight,
+            'confidence' => $confidence,
+            'patterns' => $patterns,
+            'matrix' => $matrix
+        ];
+    }
+
+    /**
+     * 2. 通用特徵分析框架 (為下三路預留)
      */
     private function detectPatterns($roadName, $roadMatrix) {
-        // 初始化該路的權重與可信度
-        $weight = ['B' => 0, 'P' => 0]; // 若是下三路，B/P 代表 紅/藍筆
+        $weight = ['B' => 0, 'P' => 0]; // 下三路的 B/P 視為 紅/藍
         $confidence = 0;
         $detectedPatterns = [];
 
-        // 這裡將置入二維矩陣的尋路邏輯 (下一步的重點)
-        // 模擬特徵偵測機制：
-        $length = count($this->records);
-        if ($length > 5) {
-            // 模擬偵測到「齊頭對齊」特徵 (強勢特徵，給予高權重與高可信度)
-            $detectedPatterns[] = "齊頭對齊";
-            $weight['P'] += 15; // 假設齊頭對齊強烈暗示下一口開 P (或藍)
-            $confidence += 30;
-            
-            // 模擬偵測到「單跳」特徵
-            $detectedPatterns[] = "單跳";
-            $weight['P'] += 10;
-            $confidence += 20;
-        }
-
+        // 未來這裡將接入大眼仔、小路、曱甴路的特定紅藍筆特徵判斷
+        
         return [
             'name' => $roadName,
             'weight' => $weight,
@@ -86,8 +150,13 @@ class QuantumBaccaratEngine {
      * 3. 四大核心獨立運算
      */
     private function analyzeFourRoads() {
-        // 未來這裡會傳入各自計算好的二維矩陣 ($matrix)
-        $bigRoad = $this->detectPatterns('大路', []);
+        // 第一步：先建構大路矩陣
+        $bigRoadMatrix = $this->buildBigRoadMatrix();
+        
+        // 第二步：分析大路特徵
+        $bigRoad = $this->analyzeBigRoadPatterns($bigRoadMatrix);
+        
+        // 第三步：預留推算下三路
         $bigEyeBoy = $this->detectPatterns('大眼仔', []);
         $smallRoad = $this->detectPatterns('小路', []);
         $roachRoad = $this->detectPatterns('曱甴路', []);
@@ -100,54 +169,50 @@ class QuantumBaccaratEngine {
      */
     public function generateRecommendation() {
         if (count($this->records) < 2) {
-            return ["status" => "waiting", "recommendation" => "等待數據累積...", "action" => "NONE"];
+            return ["status" => "waiting", "recommendation" => "等待數據累積...", "action" => "NONE", "bet_amount" => 0];
         }
 
-        // 取得動態天生勝率
         $baseWeight = $this->calculateDynamicBaseWeight();
-        
-        // 取得四大核心分析結果
         $cores = $this->analyzeFourRoads();
 
         $totalB = $baseWeight['B'];
         $totalP = $baseWeight['P'];
         $totalConfidence = 0;
-        $conflictScore = 0; // 衝突指數 (防盲目偏向)
 
-        // 整合四大核心權重
         foreach ($cores as $core) {
             $totalB += $core['weight']['B'];
             $totalP += $core['weight']['P'];
             $totalConfidence += $core['confidence'];
         }
 
-        // 防盲目偏向機制 (防禦門檻)
-        // 檢查四大路是否有嚴重衝突 (例如大路強烈看莊，但下三路全看閒)
         $diff = abs($totalB - $totalP);
-        
-        // 假設平均每個核心貢獻 10~20 可信度，總可信度需達到一定門檻
-        $confidenceThreshold = 40; 
+        $confidenceThreshold = 35; // 可信度門檻設定
 
         $action = "NONE";
         $recommendation = "觀望 (防禦機制觸發)";
+        $betAmount = 0;
 
-        // 如果權重差異太小(互相抵銷) 或 總可信度不足，強制觀望
         if ($diff > 10 && $totalConfidence >= $confidenceThreshold) {
             if ($totalB > $totalP) {
                 $action = "B";
                 $recommendation = "正打 莊 (B)";
+                $betAmount = 100;
             } else {
                 $action = "P";
                 $recommendation = "正打 閒 (P)";
+                $betAmount = 100;
             }
         } elseif ($diff <= 10) {
             $recommendation = "鎖死觀望 (路單衝突)";
+        } elseif ($totalConfidence < $confidenceThreshold) {
+             $recommendation = "鎖死觀望 (無明顯特徵)";
         }
 
         return [
             "status" => "success",
             "action" => $action,
             "recommendation" => $recommendation,
+            "bet_amount" => $betAmount,
             "dynamic_base" => [
                 "B" => round($baseWeight['B'], 2),
                 "P" => round($baseWeight['P'], 2)
@@ -162,6 +227,7 @@ class QuantumBaccaratEngine {
     }
 }
 
+// 執行引擎並輸出結果
 $engine = new QuantumBaccaratEngine($records);
 echo json_encode($engine->generateRecommendation());
 ?>
