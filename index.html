@@ -195,13 +195,100 @@
     </div>
 
     <script>
-        // JS 邏輯將在這裡編寫 (下一步)
-        function addRecord(result) {
-            console.log("輸入: " + result);
-            // 稍後實作：更新路紙與發送數據給 PHP
+        // 全局狀態管理
+const state = {
+    records: [], // 儲存開牌順序，例如 ['B', 'P', 'T', 'B']
+    balance: 0,
+    win: 0,
+    loss: 0
+};
+
+// 1. 初始化五路網格
+function initGrid(elementId, rows, cols) {
+    const container = document.getElementById(elementId);
+    let table = '<table class="grid-board">';
+    for (let r = 0; r < rows; r++) {
+        table += '<tr>';
+        for (let c = 0; c < cols; c++) {
+            table += `<td id="${elementId}-${r}-${c}"></td>`;
         }
-        function undoRecord() { console.log("撤銷"); }
-        function resetBoard() { console.log("重置"); }
+        table += '</tr>';
+    }
+    table += '</table>';
+    container.innerHTML = table;
+}
+
+// 頁面載入時自動繪製所有表格 (標準 6 列)
+window.onload = function() {
+    initGrid('bead-plate-board', 6, 8);   // 珠盤路
+    initGrid('big-road-board', 6, 30);    // 大路
+    initGrid('big-eye-board', 6, 15);     // 大眼仔
+    initGrid('small-road-board', 6, 15);  // 小路
+    initGrid('roach-road-board', 6, 15);  // 曱甴路
+};
+
+// 2. 新增開牌紀錄與按鈕點擊事件
+function addRecord(result) {
+    state.records.push(result);
+    renderBeadPlate(); // 畫珠盤路
+    
+    // 每次輸入後，將數據發送給 PHP 進行 AI 運算
+    analyzeWithPHP(); 
+}
+
+// 3. 渲染珠盤路 (只負責珠盤路，其他四路交由 PHP 算好座標後回傳)
+function renderBeadPlate() {
+    // 先清空現有珠盤路
+    document.querySelectorAll('#bead-plate-board td').forEach(td => td.innerHTML = '');
+    
+    const rows = 6;
+    state.records.forEach((res, index) => {
+        const c = Math.floor(index / rows); // 計算行 (Column)
+        const r = index % rows;             // 計算列 (Row)
+        const cell = document.getElementById(`bead-plate-board-${r}-${c}`);
+        
+        if (cell) {
+            // 使用實心圓圈與文字代表莊閒和
+            if (res === 'B') cell.innerHTML = '<div style="background-color: var(--red-color); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; margin: 0 auto;">莊</div>';
+            if (res === 'P') cell.innerHTML = '<div style="background-color: var(--blue-color); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; margin: 0 auto;">閒</div>';
+            if (res === 'T') cell.innerHTML = '<div style="background-color: var(--green-color); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; margin: 0 auto;">和</div>';
+        }
+    });
+}
+
+// 4. 撤銷最後一筆
+function undoRecord() {
+    if(state.records.length > 0) {
+        state.records.pop();
+        renderBeadPlate();
+        analyzeWithPHP(); // 重新分析
+    }
+}
+
+// 5. 新靴重置
+function resetBoard() {
+    state.records = [];
+    document.querySelectorAll('.grid-board td').forEach(td => td.innerHTML = '');
+    document.getElementById('ai-recommend').innerText = "等待輸入...";
+    document.getElementById('ai-recommend').style.color = "#FFD700";
+    document.getElementById('bet-amount').innerText = "$0";
+}
+
+// 6. 核心：呼叫 PHP 後端引擎 (準備用於下一步)
+async function analyzeWithPHP() {
+    const recommendUI = document.getElementById('ai-recommend');
+    recommendUI.innerText = "🧠 AI 運算中...";
+    recommendUI.style.color = "#ffffff";
+
+    // 【下一步實作】這裡將會是 fetch('api.php', { method: 'POST', body: JSON.stringify(state.records) })
+    // 目前先模擬 PHP 的延遲回傳效果
+    setTimeout(() => {
+        console.log("目前牌單準備發送給 PHP: ", state.records);
+        // 假資料測試 UI：
+        // recommendUI.innerText = "正打 莊 (B)";
+        // recommendUI.style.color = "var(--red-color)";
+    }, 500);
+}
     </script>
 </body>
 </html>
