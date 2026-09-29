@@ -199,7 +199,7 @@
         .btn-action { background: linear-gradient(135deg, #475569, #1e293b); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
         .btn-import { background: linear-gradient(135deg, #f59e0b, #d97706); font-size: 0.95rem; padding: 8px 16px; border-radius: 6px;}
 
-        /* 五路矩陣 (全新動態自適應佈局) */
+        /* 五路矩陣 (自適應佈局) */
         .roads-container {
             display: flex;
             gap: 0;
@@ -211,23 +211,22 @@
             height: auto;
         }
 
-        /* 嚴格的水平滾動容器設置 */
         .bead-plate {
-            width: 25%;
+            width: 30%;
             border-right: 3px solid var(--grid-section-line);
             overflow-x: auto;
             overflow-y: hidden;
         }
         
         .right-roads {
-            width: 75%;
+            width: 70%;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
         
         .big-road {
-            flex: 1.2;
+            flex: 1;
             border-bottom: 3px solid var(--grid-section-line);
             overflow-x: auto;
             overflow-y: hidden;
@@ -250,7 +249,6 @@
             border-right: none;
         }
 
-        /* 動態生成的網格，保證絕對正方形，超出才滾動 */
         .grid-board {
             border-collapse: collapse;
             table-layout: fixed;
@@ -258,19 +256,22 @@
             min-width: 100%;
         }
         
+        /* 一般網格 (大路與下三路) */
         .grid-board td {
             border: 1px solid var(--grid-line);
-            width: 24px;
-            min-width: 24px;
-            max-width: 24px;
+            width: 24px; min-width: 24px; max-width: 24px;
             height: 24px;
-            text-align: center;
-            vertical-align: middle;
-            padding: 0;
-            box-sizing: border-box;
+            text-align: center; vertical-align: middle;
+            padding: 0; box-sizing: border-box;
         }
 
-        /* 自訂科技感滾動條 */
+        /* 👑 修正: 珠盤路格線比例放大，填滿高度 */
+        .bead-plate-board td {
+            width: 48px; min-width: 48px; max-width: 48px;
+            height: 48px; 
+        }
+
+        /* 隱藏捲軸美化 */
         ::-webkit-scrollbar { height: 8px; }
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-top: 1px solid var(--grid-line); }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
@@ -301,7 +302,6 @@
             </label>
         </div>
 
-        <!-- 快速匯入數據區 -->
         <div class="strategy-panel" style="margin-top: -5px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-bottom: 0; border-bottom: none;">
             <label style="display:flex; align-items:center; gap:10px;">快速匯入已開牌局: 
                 <input type="text" id="batch-input" placeholder="例: BPBTPP 或 莊閒莊和閒" style="width: 250px;">
@@ -367,9 +367,10 @@
     </div>
 
     <script>
-        // 全局狀態與資金管理
+        // 👑 修正1: 建立歷史快照陣列，用於完美撤銷狀態
         const state = {
             records: [],
+            history: [], 
             netProfit: 0,
             win: 0,
             loss: 0,
@@ -382,7 +383,7 @@
         const fibSequence = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610];
 
         // ==========================================
-        // 🧠 Quantum Engine (七大特徵完整版 + 動態權重)
+        // 🧠 Quantum Engine (含大路和局支援)
         // ==========================================
         const QuantumEngine = {
             THEORETICAL_B: 50.68,
@@ -405,28 +406,58 @@
                 }
             },
 
+            // 👑 修正3: 加入大路和局(Tie)整合引擎
+            buildBigRoadMatrix: function(rawSeq) {
+                let matrix = [];
+                let currentCol = -1;
+                let lastResult = null;
+                let tieCount = 0;
+
+                for (let res of rawSeq) {
+                    if (res === 'T') {
+                        if (currentCol === -1) { tieCount++; } 
+                        else { matrix[currentCol][matrix[currentCol].length - 1].ties++; }
+                    } else if (res === 'B' || res === 'P') {
+                        if (res !== lastResult) { currentCol++; matrix[currentCol] = []; }
+                        matrix[currentCol].push({ outcome: res, ties: tieCount });
+                        tieCount = 0;
+                        lastResult = res;
+                    }
+                }
+                return matrix;
+            },
+
             analyze: function(rawRecords) {
                 const records = rawRecords.filter(r => r === 'B' || r === 'P');
-                if (records.length < 2) return { status: "waiting", recommendation: "等待數據累積...", action: "NONE", bet_amount: 0 };
-
                 const total = records.length;
                 const bCount = records.filter(r => r === 'B').length;
                 const pCount = records.filter(r => r === 'P').length;
-                const smoothing = Math.min(total / 30, 0.8);
                 
-                const dynamicB = (this.THEORETICAL_B * (1 - smoothing)) + ((bCount / total * 100) * smoothing);
-                const dynamicP = (this.THEORETICAL_P * (1 - smoothing)) + ((pCount / total * 100) * smoothing);
+                const smoothing = Math.min(total / 30, 0.8);
+                const dynamicB = total > 0 ? (this.THEORETICAL_B * (1 - smoothing)) + ((bCount / total * 100) * smoothing) : this.THEORETICAL_B;
+                const dynamicP = total > 0 ? (this.THEORETICAL_P * (1 - smoothing)) + ((pCount / total * 100) * smoothing) : this.THEORETICAL_P;
                 const baseWeight = { B: dynamicB, P: dynamicP };
 
+                // 產生帶有和局資訊的矩陣 (供大路渲染使用)
+                const bigRoadMatrixWithTies = this.buildBigRoadMatrix(rawRecords);
+                // 產生純莊閒矩陣 (供探路與特徵分析使用)
                 const bigRoadMatrix = this.buildMatrix(records);
                 const matBigEye = this.buildMatrix(this.deriveSequence(bigRoadMatrix, 1));
                 const matSmall = this.buildMatrix(this.deriveSequence(bigRoadMatrix, 2));
                 const matRoach = this.buildMatrix(this.deriveSequence(bigRoadMatrix, 3));
 
                 const bigRoad = this.detectPatterns('大路', bigRoadMatrix, false);
+                bigRoad.matrix = bigRoadMatrixWithTies; // 覆蓋為帶有和局的矩陣以供畫圖
                 const bigEyeBoy = this.detectPatterns('大眼仔', matBigEye, true);
                 const smallRoad = this.detectPatterns('小路', matSmall, true);
                 const roachRoad = this.detectPatterns('曱甴路', matRoach, true);
+
+                const cores_analysis = [bigRoad, bigEyeBoy, smallRoad, roachRoad];
+
+                // 👑 修正4: 就算數據不足，也回傳陣列，讓畫面能徹底清除或重繪
+                if (records.length < 2) {
+                    return { status: "waiting", recommendation: "等待數據累積...", action: "NONE", bet_amount: 0, cores_analysis: cores_analysis };
+                }
 
                 const askRoad = this.simulateNextAskRoad(bigRoadMatrix);
 
@@ -446,7 +477,7 @@
                 } else if (diff <= 10) { recommendation = "鎖死觀望 (路單衝突)"; } 
                 else if (totalConf < confThreshold) { recommendation = "鎖死觀望 (無明顯特徵)"; }
 
-                return { status: "success", action: action, recommendation: recommendation, cores_analysis: [bigRoad, bigEyeBoy, smallRoad, roachRoad] };
+                return { status: "success", action: action, recommendation: recommendation, cores_analysis: cores_analysis };
             },
 
             buildMatrix: function(seq) {
@@ -514,7 +545,7 @@
         };
 
         // ==========================================
-        // 🎨 前端 UI 與操作邏輯 (動態網格 + 完美長龍轉彎)
+        // 🎨 前端 UI 與操作邏輯
         // ==========================================
 
         window.onload = function() {
@@ -532,6 +563,17 @@
         }
 
         function addRecord(result) {
+            // 👑 修正1: 寫入新紀錄前，先保存當前所有狀態的「歷史快照」
+            state.history.push({
+                win: state.win,
+                loss: state.loss,
+                netProfit: state.netProfit,
+                consecutiveLosses: state.consecutiveLosses,
+                fibIndex: state.fibIndex,
+                lastAiAction: state.lastAiAction,
+                currentBetAmount: state.currentBetAmount
+            });
+
             if (state.lastAiAction !== 'NONE' && state.currentBetAmount > 0) {
                 if (result === 'T') { } 
                 else if (result === state.lastAiAction) {
@@ -561,6 +603,7 @@
             if (newRecords.length === 0) { alert("未偵測到有效的牌局數據"); return; }
 
             state.records = newRecords;
+            state.history = []; // 匯入數據會清除撤銷記憶
             state.netProfit = 0; state.win = 0; state.loss = 0; state.lastAiAction = 'NONE';
             state.currentBetAmount = 0; state.consecutiveLosses = 0; state.fibIndex = 0;
 
@@ -568,6 +611,26 @@
             renderBeadPlate();
             analyzeWithJS();
             inputElement.value = '';
+        }
+
+        // 👑 修正1: 讀取歷史快照，完美還原上一手資金狀態
+        function undoRecord() {
+            if(state.records.length > 0) {
+                state.records.pop();
+                let prevState = state.history.pop();
+                if (prevState) {
+                    state.win = prevState.win;
+                    state.loss = prevState.loss;
+                    state.netProfit = prevState.netProfit;
+                    state.consecutiveLosses = prevState.consecutiveLosses;
+                    state.fibIndex = prevState.fibIndex;
+                    state.lastAiAction = prevState.lastAiAction;
+                    state.currentBetAmount = prevState.currentBetAmount;
+                }
+                updateBankrollUI();
+                renderBeadPlate();
+                analyzeWithJS(); 
+            }
         }
 
         function updateBankrollUI() {
@@ -587,14 +650,14 @@
             document.getElementById('win-rate').innerText = `${state.win}勝 ${state.loss}負 (${winRate}%)`;
         }
 
-        // 珠盤路動態生成
+        // 👑 修正5: 珠盤路格子尺寸放大，填滿下方空間
         function renderBeadPlate() {
             const maxRows = 6;
-            const baseCols = 10; 
+            const baseCols = 8; 
             let totalCols = Math.ceil(state.records.length / maxRows);
             if (totalCols < baseCols) totalCols = baseCols;
 
-            let html = '<table class="grid-board">';
+            let html = '<table class="grid-board bead-plate-board">';
             for (let r = 0; r < maxRows; r++) {
                 html += '<tr>';
                 for (let c = 0; c < totalCols; c++) {
@@ -604,7 +667,7 @@
                     if (res) {
                         let color = res === 'B' ? 'var(--red-color)' : (res === 'P' ? 'var(--blue-color)' : 'var(--green-color)');
                         let text = res === 'B' ? '莊' : (res === 'P' ? '閒' : '和');
-                        cellContent = `<div style="background-color: ${color}; color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin: 0 auto; box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.5); text-shadow: 1px 1px 1px rgba(0,0,0,0.5);">${text}</div>`;
+                        cellContent = `<div style="background-color: ${color}; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; margin: 0 auto; box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.5); text-shadow: 1px 1px 1px rgba(0,0,0,0.5);">${text}</div>`;
                     }
                     html += `<td>${cellContent}</td>`;
                 }
@@ -612,14 +675,6 @@
             }
             html += '</table>';
             document.getElementById('bead-plate-container').innerHTML = html;
-        }
-
-        function undoRecord() {
-            if(state.records.length > 0) {
-                state.records.pop();
-                renderBeadPlate();
-                analyzeWithJS(); 
-            }
         }
 
         function analyzeWithJS() {
@@ -677,13 +732,11 @@
                 });
                 coresContainer.innerHTML = coresHTML;
 
-                // 畫出大路與下三路
                 renderRoadGrid(data.cores_analysis[0].matrix, 'big-road-container', 'big-road', 30);
                 renderRoadGrid(data.cores_analysis[1].matrix, 'big-eye-container', 'big-eye', 20);
                 renderRoadGrid(data.cores_analysis[2].matrix, 'small-road-container', 'small', 20);
                 renderRoadGrid(data.cores_analysis[3].matrix, 'roach-road-container', 'roach', 20);
             
-                // 新增資料後，所有路紙自動平滑滾動到最右側
                 setTimeout(() => {
                     document.querySelectorAll('.bead-plate, .big-road, .derived-roads > div').forEach(el => {
                         el.scrollTo({ left: el.scrollWidth, behavior: 'smooth' });
@@ -692,42 +745,35 @@
             }
         }
 
-        // 🌟 核心升級：全新動態網格生成與精準長龍轉彎物理引擎
+        // 👑 修正2, 3, 4: 下三路紅藍筆校正、大路和局繪製、撤銷完全淨空
         function renderRoadGrid(matrix, containerId, styleType, baseCols) {
             const maxRows = 6;
             let logicalGrid = {}; 
             let currentVisualCol = 0;
             let maxCol = baseCols - 1; 
 
-            // 1. 物理碰撞模擬
             for (let col = 0; col < matrix.length; col++) {
                 let run = matrix[col];
-                let outcome = run[0];
+                let outcomeObj = run[0]; 
                 let r = 0;
                 let c = currentVisualCol;
 
                 for (let i = 0; i < run.length; i++) {
                     if (i === 0) {
                         r = 0; c = currentVisualCol;
-                        // 尋找空欄位
                         while (logicalGrid[`0,${c}`]) { c++; }
                         currentVisualCol = c;
                     } else {
-                        // 核心：若碰到底部，或下一格已被佔用(撞擊其他長龍)，則向右轉彎
-                        if (r + 1 < maxRows && !logicalGrid[`${r + 1},${c}`]) {
-                            r++; // 往下
-                        } else {
-                            c++; // 往右 (長龍轉彎)
-                        }
+                        if (r + 1 < maxRows && !logicalGrid[`${r + 1},${c}`]) { r++; } 
+                        else { c++; }
                     }
-                    logicalGrid[`${r},${c}`] = outcome;
+                    logicalGrid[`${r},${c}`] = run[i]; 
                     if (c > maxCol) maxCol = c;
                 }
                 currentVisualCol++;
             }
 
-            // 2. 動態生成網格 HTML
-            let totalCols = maxCol + 2; // 預留一兩格空白
+            let totalCols = maxCol + 2; 
             if (totalCols < baseCols) totalCols = baseCols;
 
             let html = '<table class="grid-board">';
@@ -735,12 +781,25 @@
                 html += '<tr>';
                 for (let c = 0; c < totalCols; c++) {
                     let cellContent = '';
-                    let outcome = logicalGrid[`${r},${c}`];
+                    let cellData = logicalGrid[`${r},${c}`];
                     
-                    if (outcome) {
-                        let color = (outcome === 'B' || outcome === 'R') ? 'var(--red-color)' : 'var(--blue-color)';
+                    if (cellData) {
+                        // 判斷是單純字串(下三路)還是物件(大路含和局)
+                        let outcome = typeof cellData === 'string' ? cellData : cellData.outcome;
+                        let ties = typeof cellData === 'string' ? 0 : cellData.ties;
+                        
+                        // 修正2: 下三路的紅藍代表規律與混亂(R/B)，大路的紅藍代表莊閒(B/P)
+                        let color = (styleType === 'big-road') 
+                                    ? (outcome === 'B' ? 'var(--red-color)' : 'var(--blue-color)')
+                                    : (outcome === 'R' ? 'var(--red-color)' : 'var(--blue-color)');
+
                         if (styleType === 'big-road') {
-                            cellContent = `<div style="border: 2px solid ${color}; width: 14px; height: 14px; border-radius: 50%; margin: 0 auto; box-shadow: inset 0 0 3px ${color}, 0 0 3px ${color};"></div>`;
+                            // 修正3: 繪製和局綠線與數字
+                            let tieLine = ties > 0 ? `<div style="position:absolute; top:50%; left: -2px; right: -2px; height: 3px; background-color: var(--green-color); transform: translateY(-50%) rotate(-45deg);"></div>` : '';
+                            if (ties > 1) {
+                                tieLine += `<div style="position:absolute; top:-8px; left:12px; font-size:11px; font-weight:900; color:var(--green-color); z-index:10; text-shadow: 0 0 2px black;">${ties}</div>`;
+                            }
+                            cellContent = `<div style="position:relative; border: 2px solid ${color}; width: 14px; height: 14px; border-radius: 50%; margin: 0 auto; box-shadow: inset 0 0 3px ${color}, 0 0 3px ${color};">${tieLine}</div>`;
                         } else if (styleType === 'big-eye') {
                             cellContent = `<div style="border: 2px solid ${color}; width: 8px; height: 8px; border-radius: 50%; margin: 0 auto; box-shadow: 0 0 2px ${color};"></div>`;
                         } else if (styleType === 'small') {
@@ -770,7 +829,7 @@
                 console.log("數據成功上傳！");
             } catch (error) { console.error("上傳失敗:", error); }
 
-            state.records = []; state.netProfit = 0; state.win = 0; state.loss = 0; state.lastAiAction = 'NONE'; state.currentBetAmount = 0; state.consecutiveLosses = 0; state.fibIndex = 0;
+            state.records = []; state.history = []; state.netProfit = 0; state.win = 0; state.loss = 0; state.lastAiAction = 'NONE'; state.currentBetAmount = 0; state.consecutiveLosses = 0; state.fibIndex = 0;
             
             updateBankrollUI();
             recommendUI.innerText = "等待數據累積..."; recommendUI.style.color = "var(--gold-color)"; document.getElementById('bet-amount').innerText = "$0";
