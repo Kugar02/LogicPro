@@ -3,39 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum Baccarat Pro</title>
+    <title>Quantum Baccarat Pro | VIP</title>
     <style>
-        /* 基礎重置與變數 */
+        /* 基礎重置與尊榮版變數 */
         :root {
-            --bg-dark: #121212;
-            --panel-bg: #1e1e1e;
-            --text-main: #ffffff;
-            --red-color: #ff3b30;
-            --blue-color: #0A84FF;
-            --green-color: #30d158;
-            --border-color: #333333;
+            --bg-main: #0B0E14; /* 深邃午夜藍 */
+            --panel-bg: rgba(26, 31, 43, 0.7); /* 半透明毛玻璃底 */
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --red-color: #ff4d4f;
+            --blue-color: #3b82f6;
+            --green-color: #10b981;
+            --gold-color: #fbbf24;
+            --grid-bg: #131720;
+            --grid-line: #242a38;
+            --grid-section-line: #475569;
         }
 
         body {
-            background-color: var(--bg-dark);
+            background: radial-gradient(circle at top center, #172033 0%, var(--bg-main) 100%);
             color: var(--text-main);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 15px;
             display: flex;
             flex-direction: column;
             gap: 15px;
+            min-height: 100vh;
         }
 
-        /* 頂部：資金與策略儀表板 */
+        /* 頂部控制與策略面板 (毛玻璃風格) */
+        .top-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 15px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--panel-border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .strategy-panel {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            align-items: center;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+        
+        .strategy-panel select, .strategy-panel input {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            background-color: rgba(15, 23, 42, 0.8);
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .strategy-panel select:focus, .strategy-panel input:focus {
+            border-color: var(--blue-color);
+        }
+
+        /* 資金與策略儀表板 */
         .dashboard {
             display: flex;
             justify-content: space-between;
             flex-wrap: wrap;
-            background-color: var(--panel-bg);
-            padding: 15px 20px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
             gap: 10px;
         }
 
@@ -47,73 +88,91 @@
             min-width: 120px;
         }
 
+        .stat-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
         .stat-value {
-            font-size: 1.4rem;
-            font-weight: bold;
-            margin-top: 5px;
+            font-size: 1.6rem;
+            font-weight: 800;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
         .recommendation {
-            color: #FFD700;
-            font-size: 1.3rem;
+            color: var(--gold-color);
+            font-size: 1.5rem;
+            text-shadow: 0 0 12px rgba(251, 191, 36, 0.4);
         }
 
-        /* 策略控制面板 */
-        .strategy-panel {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            background-color: #2a2a2a;
-            padding: 10px;
-            border-radius: 8px;
-            align-items: center;
-        }
-        
-        .strategy-panel select, .strategy-panel input {
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #444;
-            background-color: #111;
-            color: #fff;
-            font-size: 1rem;
-        }
-
-        /* 控制區：快捷輸入按鈕 */
+        /* 控制區：立體漸層按鈕 */
         .controls {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             justify-content: center;
-            background-color: var(--panel-bg);
-            padding: 12px;
-            border-radius: 8px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--panel-border);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
 
         button {
-            padding: 12px 20px;
+            padding: 12px 24px;
             font-size: 1.1rem;
             font-weight: bold;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: opacity 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
         }
 
-        button:hover { opacity: 0.8; }
-        .btn-banker { background-color: var(--red-color); color: white; }
-        .btn-player { background-color: var(--blue-color); color: white; }
-        .btn-tie { background-color: var(--green-color); color: white; }
-        .btn-action { background-color: #555; color: white; }
+        button:hover { 
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
 
-        /* 五路路紙矩陣 (核心佈局) */
+        .btn-banker { 
+            background: linear-gradient(135deg, #ef4444, #b91c1c); 
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4), inset 0 1px 1px rgba(255,255,255,0.3);
+        }
+        .btn-player { 
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8); 
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4), inset 0 1px 1px rgba(255,255,255,0.3);
+        }
+        .btn-tie { 
+            background: linear-gradient(135deg, #10b981, #047857); 
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4), inset 0 1px 1px rgba(255,255,255,0.3);
+        }
+        .btn-action { 
+            background: linear-gradient(135deg, #475569, #1e293b); 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255,255,255,0.1);
+        }
+
+        /* 五路路紙矩陣 (尊榮暗黑版) */
         .roads-container {
             display: grid;
-            grid-template-columns: minmax(150px, 1fr) minmax(400px, 3fr);
-            gap: 8px;
-            background-color: #ffffff;
-            padding: 8px;
-            border-radius: 8px;
-            height: 450px;
-            border: 2px solid #ccc;
+            grid-template-columns: minmax(180px, 1fr) minmax(400px, 3fr);
+            gap: 0;
+            background-color: var(--grid-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid var(--grid-section-line);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            height: 480px;
         }
 
         .grid-board {
@@ -124,53 +183,68 @@
         }
 
         .grid-board td {
-            border: 1px solid #eaeaea;
-            width: 20px;
-            height: 20px;
+            border: 1px solid var(--grid-line);
+            width: 26px; /* 固定寬高解決橢圓問題 */
+            height: 26px;
             text-align: center;
             vertical-align: middle;
             position: relative;
             box-sizing: border-box;
+            padding: 0;
         }
 
-        .bead-plate { border-right: 3px solid #333; }
+        .bead-plate { border-right: 3px solid var(--grid-section-line); }
         .right-roads { display: flex; flex-direction: column; height: 100%; }
-        .big-road { flex: 1.2; border-bottom: 3px solid #333; }
+        .big-road { flex: 1.2; border-bottom: 3px solid var(--grid-section-line); }
         .derived-roads { flex: 1; display: flex; }
-        .derived-roads > div { flex: 1; border-right: 2px solid #333; }
+        .derived-roads > div { flex: 1; border-right: 2px solid var(--grid-section-line); }
         .derived-roads > div:last-child { border-right: none; }
+        
+        /* 動畫 */
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .ai-thinking {
+            animation: pulse 1s infinite;
+            color: var(--text-muted) !important;
+        }
     </style>
 </head>
 <body>
 
-    <!-- 策略設定區 -->
-    <div class="strategy-panel">
-        <label>基碼大小: $<input type="number" id="base-bet" value="100" style="width: 80px;"></label>
-        <label>注碼策略: 
-            <select id="bet-strategy">
-                <option value="flat">平注 (永遠下基碼)</option>
-                <option value="martingale">馬丁格爾 (輸後翻倍)</option>
-            </select>
-        </label>
-    </div>
+    <!-- 頂部控制與儀表板 -->
+    <div class="top-container">
+        <!-- 策略設定區 -->
+        <div class="strategy-panel">
+            <label>基碼設定: $<input type="number" id="base-bet" value="1000" style="width: 90px;"></label>
+            <label>注碼策略: 
+                <select id="bet-strategy">
+                    <option value="martingale">馬丁格爾 (輸後翻倍)</option>
+                    <option value="flat">平注 (永遠下基碼)</option>
+                </select>
+            </label>
+        </div>
 
-    <!-- 資金與策略儀表板 -->
-    <div class="dashboard">
-        <div class="stat-box">
-            <span>累計盈虧</span>
-            <span class="stat-value" id="total-profit" style="color: #fff;">$0</span>
-        </div>
-        <div class="stat-box">
-            <span>AI 最終預測</span>
-            <span class="stat-value recommendation" id="ai-recommend">等待輸入...</span>
-        </div>
-        <div class="stat-box">
-            <span>下一注金額</span>
-            <span class="stat-value" id="bet-amount">$0</span>
-        </div>
-        <div class="stat-box">
-            <span>AI 勝率統計</span>
-            <span class="stat-value" id="win-rate">0勝 0負 (0%)</span>
+        <!-- 資金與策略儀表板 -->
+        <div class="dashboard">
+            <div class="stat-box">
+                <span class="stat-label">累計盈虧</span>
+                <span class="stat-value" id="total-profit" style="color: var(--text-main);">$0</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">AI 最終預測</span>
+                <span class="stat-value recommendation" id="ai-recommend">等待輸入...</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">下一注建議</span>
+                <span class="stat-value" id="bet-amount">$0</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">AI 勝率統計</span>
+                <span class="stat-value" id="win-rate" style="font-size: 1.2rem; margin-top: 10px;">0勝 0負 (0%)</span>
+            </div>
         </div>
     </div>
 
@@ -179,11 +253,11 @@
         <button class="btn-banker" onclick="addRecord('B')">🔴 開莊 (B)</button>
         <button class="btn-player" onclick="addRecord('P')">🔵 開閒 (P)</button>
         <button class="btn-tie" onclick="addRecord('T')">🟢 開和 (T)</button>
-        <button class="btn-action" onclick="undoRecord()">↩️ 撤銷</button>
-        <button class="btn-action" onclick="resetBoard()">🗑️ 新靴重置</button>
+        <button class="btn-action" onclick="undoRecord()">↩️ 撤銷上一手</button>
+        <button class="btn-action" onclick="resetBoard()">🗑️ 結算並新靴</button>
     </div>
 
-    <!-- 五路矩陣面板 -->
+    <!-- 五路矩陣面板 (暗黑版) -->
     <div class="roads-container">
         <div class="bead-plate" id="bead-plate-board"></div>
         <div class="right-roads">
@@ -203,11 +277,9 @@
             balance: 0,
             win: 0,
             loss: 0,
-            
-            // 資金邏輯追蹤
-            lastAiAction: 'NONE',  // 上一局 AI 建議 (B, P, NONE)
-            currentBetAmount: 0,   // 當前下注金額
-            consecutiveLosses: 0   // 連輸局數 (用於馬丁策略)
+            lastAiAction: 'NONE',  
+            currentBetAmount: 0,   
+            consecutiveLosses: 0   
         };
 
         // 1. 初始化五路網格
@@ -227,51 +299,54 @@
 
         window.onload = function() {
             initGrid('bead-plate-board', 6, 8);   
-            initGrid('big-road-board', 6, 32);    
-            initGrid('big-eye-board', 6, 16);     
-            initGrid('small-road-board', 6, 16);  
-            initGrid('roach-road-board', 6, 16);  
+            initGrid('big-road-board', 6, 36);    
+            initGrid('big-eye-board', 6, 18);     
+            initGrid('small-road-board', 6, 18);  
+            initGrid('roach-road-board', 6, 18);  
         };
 
-        // 2. 新增紀錄 & 結算上一局盈虧
+        // 2. 新增紀錄 & 結算
         function addRecord(result) {
-            // A. 先結算上一局的勝負
             if (state.lastAiAction !== 'NONE' && state.currentBetAmount > 0) {
                 if (result === 'T') {
-                    // 開和局，退回本金，不計算勝負
                     console.log("和局，退水");
                 } else if (result === state.lastAiAction) {
-                    // AI 預測命中！
                     state.win++;
                     state.balance += state.currentBetAmount;
-                    state.consecutiveLosses = 0; // 連輸中斷
+                    state.consecutiveLosses = 0; 
                 } else {
-                    // AI 預測錯誤...
                     state.loss++;
                     state.balance -= state.currentBetAmount;
                     state.consecutiveLosses++;
                 }
             }
-
-            // B. 更新畫面與儲存紀錄
             updateBankrollUI();
             state.records.push(result);
             renderBeadPlate();
             analyzeWithPHP(); 
         }
 
-        // 更新資金與勝率介面
+        // 更新資金UI (加入霓虹發光效果)
         function updateBankrollUI() {
             const profitUI = document.getElementById('total-profit');
             profitUI.innerText = state.balance >= 0 ? `+$${state.balance}` : `-$${Math.abs(state.balance)}`;
-            profitUI.style.color = state.balance >= 0 ? 'var(--green-color)' : 'var(--red-color)';
+            if (state.balance > 0) {
+                profitUI.style.color = 'var(--green-color)';
+                profitUI.style.textShadow = '0 0 15px rgba(16, 185, 129, 0.5)';
+            } else if (state.balance < 0) {
+                profitUI.style.color = 'var(--red-color)';
+                profitUI.style.textShadow = '0 0 15px rgba(239, 68, 68, 0.5)';
+            } else {
+                profitUI.style.color = 'var(--text-main)';
+                profitUI.style.textShadow = 'none';
+            }
 
             const totalPlays = state.win + state.loss;
             const winRate = totalPlays > 0 ? Math.round((state.win / totalPlays) * 100) : 0;
             document.getElementById('win-rate').innerText = `${state.win}勝 ${state.loss}負 (${winRate}%)`;
         }
 
-        // 3. 渲染珠盤路 (視覺優化)
+        // 3. 珠盤路 (徹底解決橢圓形問題，加入完美正圓與立體陰影)
         function renderBeadPlate() {
             document.querySelectorAll('#bead-plate-board td').forEach(td => td.innerHTML = '');
             const rows = 6;
@@ -282,7 +357,8 @@
                 if (cell) {
                     let color = res === 'B' ? 'var(--red-color)' : (res === 'P' ? 'var(--blue-color)' : 'var(--green-color)');
                     let text = res === 'B' ? '莊' : (res === 'P' ? '閒' : '和');
-                    cell.innerHTML = `<div style="background-color: ${color}; color: white; width: 85%; height: 85%; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; margin: 0 auto; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">${text}</div>`;
+                    // 使用固定像素 20x20，完美正圓
+                    cell.innerHTML = `<div style="background-color: ${color}; color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin: 0 auto; box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.5); text-shadow: 1px 1px 1px rgba(0,0,0,0.5);">${text}</div>`;
                 }
             });
         }
@@ -290,17 +366,16 @@
         function undoRecord() {
             if(state.records.length > 0) {
                 state.records.pop();
-                // 註：為保持邏輯簡潔，撤銷時暫不回溯資金，建議在實戰中盡量少用撤銷，或直接重置
                 renderBeadPlate();
                 analyzeWithPHP(); 
             }
         }
 
-        // 5. 核心 API 串接與下注計算
+        // 5. 核心 API 串接
         async function analyzeWithPHP() {
             const recommendUI = document.getElementById('ai-recommend');
-            recommendUI.innerText = "🧠 運算中...";
-            recommendUI.style.color = "#888";
+            recommendUI.innerText = "🧠 系統推算中...";
+            recommendUI.classList.add('ai-thinking');
 
             try {
                 const response = await fetch('api.php', {
@@ -309,9 +384,10 @@
                     body: JSON.stringify(state.records)
                 });
                 const data = await response.json();
+                
+                recommendUI.classList.remove('ai-thinking');
 
-                // 計算下一局該下注多少錢
-                const baseBet = parseInt(document.getElementById('base-bet').value) || 100;
+                const baseBet = parseInt(document.getElementById('base-bet').value) || 1000;
                 const strategy = document.getElementById('bet-strategy').value;
                 
                 state.lastAiAction = data.action || 'NONE';
@@ -320,29 +396,33 @@
                     state.currentBetAmount = 0;
                 } else {
                     if (strategy === 'martingale') {
-                        // 馬丁策略：輸了就翻倍，贏了回歸基碼
                         state.currentBetAmount = baseBet * Math.pow(2, state.consecutiveLosses);
                     } else {
-                        // 平注策略
                         state.currentBetAmount = baseBet;
                     }
                 }
 
-                // 顯示預測與注碼
+                // 更新文字與發光效果
                 if (data.status === 'success') {
                     recommendUI.innerText = data.recommendation;
                     document.getElementById('bet-amount').innerText = `$${state.currentBetAmount}`;
                     
-                    if (data.action === 'B') recommendUI.style.color = 'var(--red-color)';
-                    else if (data.action === 'P') recommendUI.style.color = 'var(--blue-color)';
-                    else recommendUI.style.color = '#FFD700';
+                    if (data.action === 'B') {
+                        recommendUI.style.color = 'var(--red-color)';
+                        recommendUI.style.textShadow = '0 0 15px rgba(239, 68, 68, 0.6)';
+                    } else if (data.action === 'P') {
+                        recommendUI.style.color = 'var(--blue-color)';
+                        recommendUI.style.textShadow = '0 0 15px rgba(59, 130, 246, 0.6)';
+                    } else {
+                        recommendUI.style.color = 'var(--gold-color)';
+                        recommendUI.style.textShadow = '0 0 15px rgba(251, 191, 36, 0.4)';
+                    }
                 } else {
                     recommendUI.innerText = data.recommendation;
-                    recommendUI.style.color = '#FFD700';
+                    recommendUI.style.color = 'var(--gold-color)';
                     document.getElementById('bet-amount').innerText = "$0";
                 }
 
-                // 畫出大路與下三路
                 if (data.cores_analysis) {
                     if (data.cores_analysis[0].matrix) renderBigRoad(data.cores_analysis[0].matrix);
                     if (data.cores_analysis[1].matrix) renderDerivedRoad(data.cores_analysis[1].matrix, 'big-eye-board', 'big-eye');
@@ -352,11 +432,14 @@
 
             } catch (error) {
                 console.error("API 錯誤:", error);
+                recommendUI.classList.remove('ai-thinking');
                 recommendUI.innerText = "連線失敗";
+                recommendUI.style.color = 'var(--red-color)';
+                recommendUI.style.textShadow = 'none';
             }
         }
 
-        // 6. 大路繪製 (長龍轉彎修正)
+        // 6. 大路繪製 (空心圓，帶微發光)
         function renderBigRoad(matrix) {
             document.querySelectorAll('#big-road-board td').forEach(td => td.innerHTML = '');
             const maxRows = 6; 
@@ -368,7 +451,6 @@
                 for (let i = 0; i < rowLength; i++) {
                     let renderCol = currentVisualCol;
                     let renderRow = actualRow;
-                    // 長龍向右轉彎邏輯
                     if (renderRow >= maxRows) {
                         renderRow = maxRows - 1; 
                         renderCol += (actualRow - (maxRows - 1)); 
@@ -376,7 +458,7 @@
                     const cell = document.getElementById(`big-road-board-${renderRow}-${renderCol}`);
                     if (cell) {
                         let color = outcome === 'B' ? 'var(--red-color)' : 'var(--blue-color)';
-                        cell.innerHTML = `<div style="border: 2px solid ${color}; width: 12px; height: 12px; border-radius: 50%; margin: 0 auto;"></div>`;
+                        cell.innerHTML = `<div style="border: 2px solid ${color}; width: 14px; height: 14px; border-radius: 50%; margin: 0 auto; box-shadow: inset 0 0 3px ${color}, 0 0 3px ${color};"></div>`;
                     }
                     actualRow++;
                 }
@@ -384,7 +466,7 @@
             }
         }
 
-        // 7. 下三路繪製 (符號精準還原)
+        // 7. 下三路繪製 (符號精緻化)
         function renderDerivedRoad(matrix, elementId, styleType) {
             document.querySelectorAll(`#${elementId} td`).forEach(td => td.innerHTML = '');
             const maxRows = 6;
@@ -408,14 +490,11 @@
                         let color = outcome === 'R' ? 'var(--red-color)' : 'var(--blue-color)';
                         let content = '';
                         if (styleType === 'big-eye') {
-                            // 大眼仔：空心小圓
-                            content = `<div style="border: 2px solid ${color}; width: 8px; height: 8px; border-radius: 50%; margin: 0 auto;"></div>`; 
+                            content = `<div style="border: 2px solid ${color}; width: 8px; height: 8px; border-radius: 50%; margin: 0 auto; box-shadow: 0 0 2px ${color};"></div>`; 
                         } else if (styleType === 'small') {
-                            // 小路：實心小圓
-                            content = `<div style="background-color: ${color}; width: 10px; height: 10px; border-radius: 50%; margin: 0 auto;"></div>`; 
+                            content = `<div style="background-color: ${color}; width: 10px; height: 10px; border-radius: 50%; margin: 0 auto; box-shadow: 0 0 3px ${color};"></div>`; 
                         } else if (styleType === 'roach') {
-                            // 曱甴路：斜線
-                            content = `<div style="color: ${color}; font-size: 14px; font-weight: bold; line-height: 1; transform: rotate(15deg);">/</div>`; 
+                            content = `<div style="color: ${color}; font-size: 16px; font-weight: 800; line-height: 1; transform: rotate(15deg); text-shadow: 0 0 2px ${color};">/</div>`; 
                         }
                         cell.innerHTML = content;
                     }
@@ -432,6 +511,7 @@
             const recommendUI = document.getElementById('ai-recommend');
             recommendUI.innerText = "⏳ 同步至 Google Drive...";
             recommendUI.style.color = "#fff";
+            recommendUI.style.textShadow = 'none';
 
             const shoeData = {
                 records: state.records,
@@ -440,8 +520,8 @@
             };
 
             try {
-                // 【請確認此 URL 是你的 Google Apps Script 部署網址】
-                const gasUrl = "https://script.google.com/macros/s/AKfycbwRoL5wgWJeSlnyhba2zUpPWZTqxjVDwEtJNhtNnycw6hppg2FkmCNqxCDm-IFcgH76/exec";
+                // 【注意：請將此 URL 替換為你的 Google Apps Script Web App URL】
+                const gasUrl = "https://script.google.com/macros/s/AKfycbwRoL5wgWJeSlnyhba2zUpPWZTqxjVDwEtJNhtNnycw6hppg2FkmCNqxCDm-IFcgH76/exec"; 
                 
                 await fetch(gasUrl, {
                     method: 'POST',
@@ -453,7 +533,6 @@
                 console.error("上傳失敗:", error);
             }
 
-            // 完全重置狀態
             state.records = [];
             state.balance = 0;
             state.win = 0;
@@ -465,7 +544,7 @@
             document.querySelectorAll('.grid-board td').forEach(td => td.innerHTML = '');
             updateBankrollUI();
             recommendUI.innerText = "等待輸入...";
-            recommendUI.style.color = "#FFD700";
+            recommendUI.style.color = "var(--gold-color)";
             document.getElementById('bet-amount').innerText = "$0";
         }
     </script>
