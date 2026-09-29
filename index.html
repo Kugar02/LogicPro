@@ -50,7 +50,7 @@
         }
 
         .recommendation {
-            color: #FFD700; /* 金色高亮建議 */
+            color: #FFD700;
             font-size: 1.2rem;
             font-weight: bold;
         }
@@ -86,13 +86,12 @@
             display: grid;
             grid-template-columns: minmax(200px, 1fr) minmax(400px, 2fr);
             gap: 10px;
-            background-color: #ffffff; /* 路紙底色設為白色，仿照實體紙張 */
+            background-color: #ffffff;
             padding: 10px;
             border-radius: 8px;
             height: 400px;
         }
 
-        /* 通用網格樣式 */
         .grid-board {
             border-collapse: collapse;
             width: 100%;
@@ -109,36 +108,12 @@
             position: relative;
         }
 
-        /* 左側：珠盤路 */
-        .bead-plate {
-            border-right: 2px solid #000;
-        }
-
-        /* 右側：大路與下三路組合 */
-        .right-roads {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        .big-road {
-            flex: 2; /* 大路佔據上半部較多空間 */
-            border-bottom: 2px solid #000;
-        }
-
-        /* 下三路水平排列 */
-        .derived-roads {
-            flex: 1;
-            display: flex;
-        }
-
-        .derived-roads > div {
-            flex: 1;
-            border-right: 1px solid #000;
-        }
-        .derived-roads > div:last-child {
-            border-right: none;
-        }
+        .bead-plate { border-right: 2px solid #000; }
+        .right-roads { display: flex; flex-direction: column; height: 100%; }
+        .big-road { flex: 2; border-bottom: 2px solid #000; }
+        .derived-roads { flex: 1; display: flex; }
+        .derived-roads > div { flex: 1; border-right: 1px solid #000; }
+        .derived-roads > div:last-child { border-right: none; }
     </style>
 </head>
 <body>
@@ -175,15 +150,12 @@
     <!-- 五路矩陣面板 -->
     <div class="roads-container">
         <!-- 珠盤路 (左側) -->
-        <div class="bead-plate" id="bead-plate-board">
-            <!-- 稍後用 JS 自動生成表格網格 -->
-        </div>
+        <div class="bead-plate" id="bead-plate-board"></div>
 
         <!-- 右側路單群 -->
         <div class="right-roads">
             <!-- 大路 (右上) -->
-            <div class="big-road" id="big-road-board">
-            </div>
+            <div class="big-road" id="big-road-board"></div>
 
             <!-- 下三路 (右下並排) -->
             <div class="derived-roads">
@@ -194,16 +166,16 @@
         </div>
     </div>
 
- <script>
+    <script>
         // 全局狀態管理
         const state = {
-            records: [], // 儲存開牌順序
+            records: [],
             balance: 0,
             win: 0,
             loss: 0
         };
 
-        // 初始化五路網格
+        // 1. 初始化五路網格
         function initGrid(elementId, rows, cols) {
             const container = document.getElementById(elementId);
             let table = '<table class="grid-board">';
@@ -226,12 +198,14 @@
             initGrid('roach-road-board', 6, 15);  
         };
 
+        // 2. 新增開牌紀錄與按鈕點擊事件
         function addRecord(result) {
             state.records.push(result);
             renderBeadPlate(); // 畫珠盤路
             analyzeWithPHP();  // 呼叫 PHP 引擎
         }
 
+        // 3. 渲染珠盤路
         function renderBeadPlate() {
             document.querySelectorAll('#bead-plate-board td').forEach(td => td.innerHTML = '');
             const rows = 6;
@@ -242,10 +216,12 @@
                 if (cell) {
                     if (res === 'B') cell.innerHTML = '<div style="background-color: var(--red-color); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; margin: 0 auto;">莊</div>';
                     if (res === 'P') cell.innerHTML = '<div style="background-color: var(--blue-color); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; margin: 0 auto;">閒</div>';
+                    if (res === 'T') cell.innerHTML = '<div style="background-color: var(--green-color); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; margin: 0 auto;">和</div>';
                 }
             });
         }
 
+        // 4. 撤銷最後一筆
         function undoRecord() {
             if(state.records.length > 0) {
                 state.records.pop();
@@ -254,22 +230,14 @@
             }
         }
 
-        function resetBoard() {
-            state.records = [];
-            document.querySelectorAll('.grid-board td').forEach(td => td.innerHTML = '');
-            document.getElementById('ai-recommend').innerText = "等待輸入...";
-            document.getElementById('ai-recommend').style.color = "#FFD700";
-            document.getElementById('bet-amount').innerText = "$0";
-        }
-
-        // 核心：透過 Fetch 串接 PHP 引擎
+        // 5. 核心：透過 Fetch 串接 PHP 引擎
         async function analyzeWithPHP() {
             const recommendUI = document.getElementById('ai-recommend');
             recommendUI.innerText = "🧠 AI 運算中...";
             recommendUI.style.color = "#ffffff";
 
             try {
-                // 發送數據到 PHP (確保 api.php 與 index.html 在同一資料夾)
+                // 發送數據到 PHP
                 const response = await fetch('api.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -279,7 +247,7 @@
                 const data = await response.json();
                 console.log("PHP 分析結果:", data);
 
-                // 1. 更新頂部儀表板
+                // 更新頂部儀表板
                 if (data.status === 'success') {
                     recommendUI.innerText = data.recommendation;
                     document.getElementById('bet-amount').innerText = `$${data.bet_amount}`;
@@ -292,19 +260,22 @@
                     recommendUI.style.color = '#FFD700';
                 }
 
-                // 2. 接收 PHP 的二維矩陣並畫出四大路
+                // 接收 PHP 的二維矩陣並畫出四大路
                 if (data.cores_analysis) {
-                    // 畫大路
                     if (data.cores_analysis[0].matrix) renderBigRoad(data.cores_analysis[0].matrix);
-                    // 畫大眼仔 (空心圈)
                     if (data.cores_analysis[1].matrix) renderDerivedRoad(data.cores_analysis[1].matrix, 'big-eye-board', 'big-eye');
-                    // 畫小路 (實心圈)
                     if (data.cores_analysis[2].matrix) renderDerivedRoad(data.cores_analysis[2].matrix, 'small-road-board', 'small');
-                    // 畫曱甴路 (斜線)
                     if (data.cores_analysis[3].matrix) renderDerivedRoad(data.cores_analysis[3].matrix, 'roach-road-board', 'roach');
                 }
 
-      // 繪製大路 (Big Road)
+            } catch (error) {
+                console.error("API 連線失敗:", error);
+                recommendUI.innerText = "連線失敗，請檢查 PHP 伺服器";
+                recommendUI.style.color = "var(--red-color)";
+            }
+        }
+
+        // 6. 繪製大路 (Big Road)
         function renderBigRoad(matrix) {
             document.querySelectorAll('#big-road-board td').forEach(td => td.innerHTML = '');
             const maxRows = 6; 
@@ -331,7 +302,7 @@
             }
         }
 
-        // 繪製下三路 (大眼仔、小路、曱甴路)
+        // 7. 繪製下三路 (大眼仔、小路、曱甴路)
         function renderDerivedRoad(matrix, elementId, styleType) {
             document.querySelectorAll(`#${elementId} td`).forEach(td => td.innerHTML = '');
             const maxRows = 6;
@@ -354,14 +325,12 @@
                     if (cell) {
                         let color = outcome === 'R' ? 'var(--red-color)' : 'var(--blue-color)';
                         let content = '';
-
-                        // 根據不同路單渲染不同符號
                         if (styleType === 'big-eye') {
-                            content = `<div style="border: 2px solid ${color}; width: 10px; height: 10px; border-radius: 50%; margin: 0 auto;"></div>`; // 空心小圓
+                            content = `<div style="border: 2px solid ${color}; width: 10px; height: 10px; border-radius: 50%; margin: 0 auto;"></div>`; 
                         } else if (styleType === 'small') {
-                            content = `<div style="background-color: ${color}; width: 12px; height: 12px; border-radius: 50%; margin: 0 auto;"></div>`; // 實心圓
+                            content = `<div style="background-color: ${color}; width: 12px; height: 12px; border-radius: 50%; margin: 0 auto;"></div>`; 
                         } else if (styleType === 'roach') {
-                            content = `<div style="color: ${color}; font-size: 16px; font-weight: bold; line-height: 1; transform: rotate(15deg);">/</div>`; // 斜線
+                            content = `<div style="color: ${color}; font-size: 16px; font-weight: bold; line-height: 1; transform: rotate(15deg);">/</div>`; 
                         }
                         cell.innerHTML = content;
                     }
@@ -369,6 +338,45 @@
                 }
                 currentVisualCol++;
             }
+        }
+
+        // 8. 新靴重置 (包含自動上傳 Google Drive 功能)
+        async function resetBoard() {
+            if (state.records.length === 0) {
+                console.log("目前沒有資料，無需上傳");
+                return;
+            }
+
+            const recommendUI = document.getElementById('ai-recommend');
+            recommendUI.innerText = "⏳ 正在同步數據到 Google Drive...";
+            recommendUI.style.color = "#ffffff";
+
+            const shoeData = {
+                records: state.records,
+                profit: state.balance || 0,
+                status: "Shoe Completed"
+            };
+
+            try {
+                // 【注意】請將下方這段網址替換為你在 Google Apps Script 部署成功的 Web App URL
+                const gasUrl = "https://script.google.com/macros/s/AKfycbwRoL5wgWJeSlnyhba2zUpPWZTqxjVDwEtJNhtNnycw6hppg2FkmCNqxCDm-IFcgH76/exec";
+                
+                await fetch(gasUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(shoeData)
+                });
+                console.log("數據已成功發送到 Google Drive!");
+            } catch (error) {
+                console.error("同步至 Google Drive 失敗:", error);
+            }
+
+            // 清空本地狀態與畫面
+            state.records = [];
+            document.querySelectorAll('.grid-board td').forEach(td => td.innerHTML = '');
+            recommendUI.innerText = "等待輸入...";
+            recommendUI.style.color = "#FFD700";
+            document.getElementById('bet-amount').innerText = "$0";
         }
     </script>
 </body>
