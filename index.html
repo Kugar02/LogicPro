@@ -266,7 +266,7 @@
         </div>
     </div>
 
-    <!-- 👑 AI 獨立戰情分析室 (含版本徽章) -->
+    <!-- 👑 AI 獨立戰情分析室 -->
     <div class="ai-panel">
         <div class="ai-main-result">
             <span class="ai-main-title">🧠 AI 引擎最終決策 <span id="ai-version-badge" style="font-size: 0.7rem; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; margin-left: 8px;">預設權重</span></span>
@@ -318,45 +318,43 @@
         const fibSequence = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610];
 
         // ==========================================
-        // 🧠 Quantum Engine (支援動態讀取回測權重)
+        // 🧠 Quantum Engine (七大特徵完整版 + 動態權重)
         // ==========================================
         const QuantumEngine = {
             THEORETICAL_B: 50.68,
             THEORETICAL_P: 49.32,
             
-            // 預設特徵權重
+            // 預設 7 大特徵權重
             weightsConfig: {
-                dragon: 15,
-                jump: 15,
-                aligned: 15
+                dragon: 15,       
+                jump: 15,         
+                aligned: 15,      
+                doubleJump: 15,   
+                oneTwo: 15,       
+                shortRoad: 15,    
+                streakRule: 15    
             },
 
-            // 初始化：自動讀取訓練中心的權重
             init: function() {
                 const savedWeights = localStorage.getItem('quantum_ai_weights');
                 if (savedWeights) {
                     try {
-                        this.weightsConfig = JSON.parse(savedWeights);
-                        console.log("✅ 成功載入 AI 回測動態權重:", this.weightsConfig);
+                        this.weightsConfig = Object.assign(this.weightsConfig, JSON.parse(savedWeights));
+                        console.log("✅ 成功載入七大特徵回測權重:", this.weightsConfig);
                         const badge = document.getElementById('ai-version-badge');
                         if(badge) {
-                            badge.innerText = "已載入實戰回測權重";
+                            badge.innerText = "已載入最新回測權重";
                             badge.style.background = "rgba(16, 185, 129, 0.2)";
                             badge.style.color = "var(--green-color)";
                             badge.style.border = "1px solid var(--green-color)";
                         }
-                    } catch(e) {
-                        console.error("權重讀取失敗", e);
-                    }
+                    } catch(e) { console.error("權重讀取失敗", e); }
                 }
             },
 
             analyze: function(rawRecords) {
                 const records = rawRecords.filter(r => r === 'B' || r === 'P');
-                
-                if (records.length < 2) {
-                    return { status: "waiting", recommendation: "等待數據累積...", action: "NONE", bet_amount: 0 };
-                }
+                if (records.length < 2) return { status: "waiting", recommendation: "等待數據累積...", action: "NONE", bet_amount: 0 };
 
                 const total = records.length;
                 const bCount = records.filter(r => r === 'B').length;
@@ -384,7 +382,7 @@
                 let totalConf = askRoad.confidence + bigRoad.confidence + bigEyeBoy.confidence + smallRoad.confidence + roachRoad.confidence;
 
                 const diff = Math.abs(totalB - totalP);
-                const confThreshold = 40;
+                const confThreshold = 45; // 提高特徵門檻
 
                 let action = "NONE";
                 let recommendation = "觀望 (防禦機制觸發)";
@@ -399,9 +397,7 @@
                 }
 
                 return {
-                    status: "success",
-                    action: action,
-                    recommendation: recommendation,
+                    status: "success", action: action, recommendation: recommendation,
                     cores_analysis: [bigRoad, bigEyeBoy, smallRoad, roachRoad]
                 };
             },
@@ -411,10 +407,7 @@
                 let currentCol = -1;
                 let lastResult = null;
                 for (let res of seq) {
-                    if (res !== lastResult) {
-                        currentCol++;
-                        matrix[currentCol] = [];
-                    }
+                    if (res !== lastResult) { currentCol++; matrix[currentCol] = []; }
                     matrix[currentCol].push(res);
                     lastResult = res;
                 }
@@ -429,9 +422,7 @@
                         if (col < offset) continue;
                         if (col === offset && row === 0) continue;
                         if (row === 0) {
-                            let prevLen = matrix[col - 1].length;
-                            let compLen = matrix[col - 1 - offset].length;
-                            seq.push(prevLen === compLen ? 'R' : 'B');
+                            seq.push(matrix[col - 1].length === matrix[col - 1 - offset].length ? 'R' : 'B');
                         } else {
                             let compLen = matrix[col - offset] ? matrix[col - offset].length : 0;
                             if (row < compLen) seq.push('R');
@@ -446,30 +437,56 @@
             detectPatterns: function(name, matrix, isDerived) {
                 let weight = { B: 0, P: 0 };
                 let conf = 0;
+                let matchedPatterns = [];
                 let colCount = matrix.length;
+                let w = this.weightsConfig;
+
                 if (colCount >= 2) {
-                    let currentCol = matrix[colCount - 1];
-                    let prevCol = matrix[colCount - 2];
-                    let curLen = currentCol.length;
-                    let prevLen = prevCol.length;
-                    let outcome = currentCol[0];
+                    let curLen = matrix[colCount - 1].length;
+                    let prevLen = matrix[colCount - 2].length;
+                    let outcome = matrix[colCount - 1][0];
                     let opposite = (outcome === 'B' || outcome === 'R') ? (isDerived ? 'B' : 'P') : (isDerived ? 'R' : 'B');
                     
-                    // 使用動態載入的權重進行計算
                     if (curLen === prevLen && curLen >= 2) { 
-                        conf += 20; 
-                        if (!isDerived) weight[opposite] += this.weightsConfig.aligned; 
+                        conf += 20; if (!isDerived) weight[opposite] += w.aligned; 
+                        matchedPatterns.push("齊頭");
                     }
                     if (curLen >= 4) { 
-                        conf += 25; 
-                        if (!isDerived) weight[outcome] += this.weightsConfig.dragon; 
+                        conf += 25; if (!isDerived) weight[outcome] += w.dragon; 
+                        matchedPatterns.push("長龍");
                     }
-                    if (colCount >= 4 && curLen === 1 && matrix[colCount - 2].length === 1 && matrix[colCount - 3].length === 1) { 
-                        conf += 15; 
-                        if (!isDerived) weight[opposite] += this.weightsConfig.jump; 
+                    if (colCount >= 4 && curLen === 1 && prevLen === 1 && matrix[colCount - 3].length === 1) { 
+                        conf += 15; if (!isDerived) weight[opposite] += w.jump; 
+                        matchedPatterns.push("單跳");
+                    }
+                    if (colCount >= 4 && curLen === 2 && prevLen === 2 && matrix[colCount - 3].length === 2) { 
+                        conf += 20; if (!isDerived) weight[opposite] += w.doubleJump; 
+                        matchedPatterns.push("雙跳");
+                    }
+                    if (colCount >= 4 && curLen === 2 && prevLen === 1 && matrix[colCount - 3].length === 2 && matrix[colCount - 4].length === 1) { 
+                        conf += 20; if (!isDerived) weight[opposite] += w.oneTwo; 
+                        matchedPatterns.push("一房兩廳");
+                    }
+                    if (colCount >= 5) {
+                        let isShort = true;
+                        for(let i=1; i<=5; i++) { if (matrix[colCount - i].length > 2) isShort = false; }
+                        if (isShort && curLen === 2) {
+                            conf += 15; if (!isDerived) weight[opposite] += w.shortRoad;
+                            matchedPatterns.push("短路");
+                        }
+                    }
+                    if (colCount >= 5 && curLen === 1) {
+                        let streakCount = 0; let totalOcc = 0;
+                        for(let i=0; i<colCount-1; i++) {
+                            if (matrix[i][0] === outcome) { totalOcc++; if (matrix[i].length > 1) streakCount++; }
+                        }
+                        if (totalOcc >= 3 && (streakCount / totalOcc) > 0.8) {
+                            conf += 20; if (!isDerived) weight[outcome] += w.streakRule;
+                            matchedPatterns.push(`逢${outcome === 'B' || outcome === 'R' ? '紅' : '藍'}連`);
+                        }
                     }
                 }
-                return { name: name, weight: weight, confidence: conf, matrix: matrix };
+                return { name: name, weight: weight, confidence: conf, matrix: matrix, patterns: matchedPatterns };
             },
 
             simulateNextAskRoad: function(matrix) {
@@ -511,7 +528,7 @@
             initGrid('small-road-board', 6, 18);  
             initGrid('roach-road-board', 6, 18);  
             updateBankrollUI(); 
-            QuantumEngine.init(); // 啟動時自動讀取回測記憶
+            QuantumEngine.init(); // 啟動時讀取回測記憶
         };
 
         function addRecord(result) {
@@ -599,13 +616,9 @@
             if (state.lastAiAction === 'NONE') {
                 state.currentBetAmount = 0;
             } else {
-                if (strategy === 'martingale') {
-                    state.currentBetAmount = baseBet * Math.pow(2, state.consecutiveLosses);
-                } else if (strategy === 'fibonacci') {
-                    state.currentBetAmount = baseBet * fibSequence[state.fibIndex];
-                } else {
-                    state.currentBetAmount = baseBet;
-                }
+                if (strategy === 'martingale') { state.currentBetAmount = baseBet * Math.pow(2, state.consecutiveLosses); } 
+                else if (strategy === 'fibonacci') { state.currentBetAmount = baseBet * fibSequence[state.fibIndex]; } 
+                else { state.currentBetAmount = baseBet; }
             }
 
             recommendUI.classList.remove('ai-thinking');
@@ -613,17 +626,9 @@
             if (data.status === 'success') {
                 recommendUI.innerText = data.recommendation;
                 document.getElementById('bet-amount').innerText = `$${state.currentBetAmount}`;
-                
-                if (data.action === 'B') {
-                    recommendUI.style.color = 'var(--red-color)';
-                    recommendUI.style.textShadow = '0 0 15px rgba(239, 68, 68, 0.6)';
-                } else if (data.action === 'P') {
-                    recommendUI.style.color = 'var(--blue-color)';
-                    recommendUI.style.textShadow = '0 0 15px rgba(59, 130, 246, 0.6)';
-                } else {
-                    recommendUI.style.color = 'var(--gold-color)';
-                    recommendUI.style.textShadow = '0 0 15px rgba(251, 191, 36, 0.4)';
-                }
+                if (data.action === 'B') { recommendUI.style.color = 'var(--red-color)'; recommendUI.style.textShadow = '0 0 15px rgba(239, 68, 68, 0.6)'; } 
+                else if (data.action === 'P') { recommendUI.style.color = 'var(--blue-color)'; recommendUI.style.textShadow = '0 0 15px rgba(59, 130, 246, 0.6)'; } 
+                else { recommendUI.style.color = 'var(--gold-color)'; recommendUI.style.textShadow = '0 0 15px rgba(251, 191, 36, 0.4)'; }
             } else {
                 recommendUI.innerText = data.recommendation;
                 recommendUI.style.color = 'var(--gold-color)';
@@ -634,16 +639,21 @@
             if (data.cores_analysis) {
                 let coresHTML = '';
                 data.cores_analysis.forEach(core => {
-                    let recText = '無特徵';
+                    let recText = '無明顯方向';
                     let recColor = '#64748b';
-                    if (core.weight.B > core.weight.P) { recText = '傾向 莊'; recColor = 'var(--red-color)'; }
-                    else if (core.weight.P > core.weight.B) { recText = '傾向 閒'; recColor = 'var(--blue-color)'; }
+                    if (core.weight.B > core.weight.P) { recText = '傾向 莊/紅'; recColor = 'var(--red-color)'; }
+                    else if (core.weight.P > core.weight.B) { recText = '傾向 閒/藍'; recColor = 'var(--blue-color)'; }
                     
+                    let patternBadge = core.patterns.length > 0 
+                        ? `<div style="margin-top:5px; font-size:0.75rem; color:#fbbf24; background:rgba(251,191,36,0.1); padding:2px; border-radius:4px;">${core.patterns.join(', ')}</div>` 
+                        : `<div style="margin-top:5px; font-size:0.75rem; color:#475569;">無觸發特徵</div>`;
+
                     coresHTML += `
                         <div class="core-card">
                             <div class="core-name">${core.name}</div>
                             <div class="core-rec" style="color: ${recColor};">${recText}</div>
                             <div class="core-conf">信心指數: ${core.confidence}</div>
+                            ${patternBadge}
                         </div>
                     `;
                 });
@@ -742,7 +752,6 @@
                 console.error("上傳失敗:", error);
             }
 
-            // 重置狀態
             state.records = [];
             state.netProfit = 0;
             state.win = 0;
