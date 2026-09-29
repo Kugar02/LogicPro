@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum AI | 深度學習回測中心</title>
+    <style>
+        :root {
+            --bg-main: #0B0E14;
+            --panel-bg: rgba(26, 31, 43, 0.8);
+            --text-main: #e2e8f0;
+            --blue-color: #3b82f6;
+            --green-color: #10b981;
+            --gold-color: #fbbf24;
+        }
+        body {
+            background: radial-gradient(circle at top center, #172033 0%, var(--bg-main) 100%);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--panel-bg);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        h1 { text-align: center; color: var(--gold-color); margin-top: 0; }
+        .btn-train {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+        .btn-train:hover { filter: brightness(1.1); }
+        #log-area {
+            background: #000;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            color: #10b981;
+            height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            border: 1px solid #333;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-card {
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .stat-name { color: #94a3b8; font-size: 0.9rem; margin-bottom: 5px; }
+        .stat-value { font-size: 1.5rem; font-weight: bold; color: var(--gold-color); }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🧠 Quantum AI 深度學習回測中心</h1>
+        <p style="text-align: center; color: #94a3b8;">從 Google Drive 讀取歷史牌靴，自動演化特徵權重</p>
+        
+        <button class="btn-train" onclick="startTraining()">啟動 AI 回測與權重優化</button>
+        
+        <div id="log-area">等待啟動...</div>
+
+        <div class="stats-grid" id="stats-container">
+            <!-- 權重結果將顯示於此 -->
+        </div>
+    </div>
+
+    <script>
+        const gasUrl = "https://script.google.com/macros/s/AKfycbwRoL5wgWJeSlnyhba2zUpPWZTqxjVDwEtJNhtNnycw6hppg2FkmCNqxCDm-IFcgH76/exec";
+        
+        function log(message) {
+            const logArea = document.getElementById('log-area');
+            logArea.innerHTML += `> ${message}\n`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        async function startTraining() {
+            log("連線至 Google Drive 數據庫...");
+            try {
+                const response = await fetch(gasUrl);
+                const data = await response.json();
+                
+                if (data.status !== 'success') {
+                    log(`讀取失敗: ${data.message}`);
+                    return;
+                }
+
+                const history = data.history;
+                if (!history || history.length === 0) {
+                    log("警告：目前 Google Sheet 中沒有歷史數據！請先到主程式輸入牌靴並點擊「結算並新靴」。");
+                    return;
+                }
+
+                log(`成功載入 ${history.length} 靴歷史牌局。開始進行深度回測...`);
+                runSimulation(history);
+
+            } catch (error) {
+                log(`連線錯誤: ${error.message}`);
+            }
+        }
+
+        function runSimulation(history) {
+            // 基礎特徵統計器
+            let stats = {
+                '長龍順打': { win: 0, total: 0 },
+                '單跳反打': { win: 0, total: 0 },
+                '齊頭反打': { win: 0, total: 0 }
+            };
+
+            history.forEach((shoe, shoeIndex) => {
+                let currentStreak = 0;
+                let lastOutcome = '';
+                
+                for (let i = 0; i < shoe.length - 1; i++) {
+                    let outcome = shoe[i];
+                    let nextActual = shoe[i + 1];
+
+                    if (outcome === lastOutcome) currentStreak++;
+                    else { currentStreak = 1; lastOutcome = outcome; }
+
+                    // 1. 長龍回測 (長度>=4，AI 預設順打)
+                    if (currentStreak >= 4) {
+                        stats['長龍順打'].total++;
+                        if (nextActual === outcome) stats['長龍順打'].win++;
+                    }
+
+                    // 2. 單跳回測 (這裡做簡化判斷，若與上一手不同，AI預設繼續跳)
+                    if (currentStreak === 1 && i >= 1 && shoe[i-1] !== outcome) {
+                        stats['單跳反打'].total++;
+                        if (nextActual !== outcome) stats['單跳反打'].win++;
+                    }
+                }
+            });
+
+            log("回測運算完成！正在計算最新勝率與權重...");
+            displayResults(stats);
+        }
+
+        function displayResults(stats) {
+            const container = document.getElementById('stats-container');
+            container.innerHTML = '';
+
+            for (let pattern in stats) {
+                let s = stats[pattern];
+                let winRate = s.total > 0 ? (s.win / s.total) : 0.5;
+                
+                // 動態權重公式：基礎 15分，最高 35分
+                let newWeight = Math.max(5, Math.min(35, Math.round(15 + ((winRate - 0.5) * 100))));
+                
+                let winRateStr = (winRate * 100).toFixed(1) + '%';
+                log(`特徵 [${pattern}] -> 出現 ${s.total} 次, 勝率 ${winRateStr} => 建議新權重: ${newWeight}分`);
+
+                container.innerHTML += `
+                    <div class="stat-card">
+                        <div class="stat-name">${pattern}</div>
+                        <div class="stat-value">${newWeight} 分</div>
+                        <div style="color: #94a3b8; font-size: 0.8rem; margin-top: 5px;">勝率: ${winRateStr}</div>
+                    </div>
+                `;
+            }
+            log("\n訓練完畢！你可以在主程式的 QuantumEngine 中，手動更新這些特徵權重以達到自我進化。");
+        }
+    </script>
+</body>
+</html>
