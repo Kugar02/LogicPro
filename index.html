@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Baccarat Pro</title>
+    <style>
+        /* 基礎重置與變數 */
+        :root {
+            --bg-dark: #121212;
+            --panel-bg: #1e1e1e;
+            --text-main: #ffffff;
+            --red-color: #ff3b30;
+            --blue-color: #0A84FF;
+            --green-color: #30d158;
+            --border-color: #333333;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* 頂部：資金與策略儀表板 */
+        .dashboard {
+            display: flex;
+            justify-content: space-between;
+            background-color: var(--panel-bg);
+            padding: 15px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .recommendation {
+            color: #FFD700; /* 金色高亮建議 */
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        /* 控制區：快捷輸入按鈕 */
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            background-color: var(--panel-bg);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover { opacity: 0.8; }
+        .btn-banker { background-color: var(--red-color); color: white; }
+        .btn-player { background-color: var(--blue-color); color: white; }
+        .btn-tie { background-color: var(--green-color); color: white; }
+        .btn-action { background-color: #555; color: white; }
+
+        /* 五路路紙矩陣 (核心佈局) */
+        .roads-container {
+            display: grid;
+            grid-template-columns: minmax(200px, 1fr) minmax(400px, 2fr);
+            gap: 10px;
+            background-color: #ffffff; /* 路紙底色設為白色，仿照實體紙張 */
+            padding: 10px;
+            border-radius: 8px;
+            height: 400px;
+        }
+
+        /* 通用網格樣式 */
+        .grid-board {
+            border-collapse: collapse;
+            width: 100%;
+            height: 100%;
+            table-layout: fixed;
+        }
+
+        .grid-board td {
+            border: 1px solid #e0e0e0;
+            width: 25px;
+            height: 25px;
+            text-align: center;
+            vertical-align: middle;
+            position: relative;
+        }
+
+        /* 左側：珠盤路 */
+        .bead-plate {
+            border-right: 2px solid #000;
+        }
+
+        /* 右側：大路與下三路組合 */
+        .right-roads {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .big-road {
+            flex: 2; /* 大路佔據上半部較多空間 */
+            border-bottom: 2px solid #000;
+        }
+
+        /* 下三路水平排列 */
+        .derived-roads {
+            flex: 1;
+            display: flex;
+        }
+
+        .derived-roads > div {
+            flex: 1;
+            border-right: 1px solid #000;
+        }
+        .derived-roads > div:last-child {
+            border-right: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 資金與策略儀表板 -->
+    <div class="dashboard">
+        <div class="stat-box">
+            <span>累計盈虧</span>
+            <span class="stat-value" id="total-profit" style="color: var(--green-color);">+$0.00</span>
+        </div>
+        <div class="stat-box">
+            <span>最終權重建議</span>
+            <span class="stat-value recommendation" id="ai-recommend">等待輸入...</span>
+        </div>
+        <div class="stat-box">
+            <span>建議下注金額</span>
+            <span class="stat-value" id="bet-amount">$0</span>
+        </div>
+        <div class="stat-box">
+            <span>AI 勝率統計</span>
+            <span class="stat-value" id="win-rate">0勝 0負 (0%)</span>
+        </div>
+    </div>
+
+    <!-- 快捷輸入區 -->
+    <div class="controls">
+        <button class="btn-banker" onclick="addRecord('B')">🔴 開莊 (B)</button>
+        <button class="btn-player" onclick="addRecord('P')">🔵 開閒 (P)</button>
+        <button class="btn-tie" onclick="addRecord('T')">🟢 開和 (T)</button>
+        <button class="btn-action" onclick="undoRecord()">↩️ 撤銷</button>
+        <button class="btn-action" onclick="resetBoard()">🗑️ 新靴重置</button>
+    </div>
+
+    <!-- 五路矩陣面板 -->
+    <div class="roads-container">
+        <!-- 珠盤路 (左側) -->
+        <div class="bead-plate" id="bead-plate-board">
+            <!-- 稍後用 JS 自動生成表格網格 -->
+        </div>
+
+        <!-- 右側路單群 -->
+        <div class="right-roads">
+            <!-- 大路 (右上) -->
+            <div class="big-road" id="big-road-board">
+            </div>
+
+            <!-- 下三路 (右下並排) -->
+            <div class="derived-roads">
+                <div class="big-eye" id="big-eye-board"></div>
+                <div class="small-road" id="small-road-board"></div>
+                <div class="roach-road" id="roach-road-board"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JS 邏輯將在這裡編寫 (下一步)
+        function addRecord(result) {
+            console.log("輸入: " + result);
+            // 稍後實作：更新路紙與發送數據給 PHP
+        }
+        function undoRecord() { console.log("撤銷"); }
+        function resetBoard() { console.log("重置"); }
+    </script>
+</body>
+</html>
