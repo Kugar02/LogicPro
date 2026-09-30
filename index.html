@@ -306,7 +306,7 @@
     <div class="ai-panel">
         <div class="ai-main-result">
             <span class="ai-main-title">🧠 AI 引擎最終決策 <span id="ai-version-badge" style="font-size: 0.7rem; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; margin-left: 8px;">預設權重</span></span>
-            <span class="ai-main-recommendation" id="ai-recommend">等待數據累積...</span>
+            <span class="ai-main-recommendation" id="ai-recommend" style="font-size: 1.6rem;">等待數據累積...</span>
         </div>
         <div class="ai-cores" id="ai-cores-container">
             <div class="core-card"><div class="core-name">大路特徵</div><div class="core-rec" style="color:#64748b;">無</div><div class="core-conf">等待中</div></div>
@@ -550,35 +550,35 @@
                 let totalP = baseWeight.P + bigRoad.weight.P + beWeight.P + smWeight.P + roWeight.P;
                 let totalConf = bigRoad.confidence + bigEyeBoy.confidence + smallRoad.confidence + roachRoad.confidence;
 
-                // ===== 【修復：動態門檻 (Dynamic Threshold)】 =====
+                // ===== 【計算莊閒勝率百分比對決】 =====
+                const totalWeightSum = totalB + totalP;
+                const pctB = totalWeightSum > 0 ? ((totalB / totalWeightSum) * 100).toFixed(1) : 50.0;
+                const pctP = totalWeightSum > 0 ? ((totalP / totalWeightSum) * 100).toFixed(1) : 50.0;
+                const vsText = `<span style="font-size: 0.75em; display:block; margin-top: 5px; color: var(--text-muted);">莊 ${pctB}% vs 閒 ${pctP}%</span>`;
+
+                // 動態門檻
                 let w = this.weightsConfig;
-                // 計算當前所有特徵權重的總和 (代表系統極限理論最高分)
                 const maxPossibleWeight = w.dragon + w.jump + w.aligned + w.doubleJump + w.oneTwo + w.shortRoad + w.streakRule;
-                
-                // 動態淨差值門檻：取最高潛力總分的 15% (並設立最低底線 10 分)
                 const diffThreshold = Math.max(10, maxPossibleWeight * 0.15); 
-                
-                // 信心門檻 (Conf)：確保至少觸發一定的特徵數量
                 const confThreshold = 35; 
-                // ===================================================
 
                 const diff = Math.abs(totalB - totalP);
                 let action = "NONE";
                 let recommendation = "觀望 (防禦機制觸發)";
 
-                // 【雙重門檻過濾】
+                // 【雙重門檻過濾】結合百分比對決文字
                 if (diff > diffThreshold && totalConf >= confThreshold) {
                     if (totalB > totalP) {
                         action = "B";
-                        recommendation = `正打 莊 (B) [優勢差: ${diff.toFixed(1)}]`;
+                        recommendation = `正打 莊 (B) ${vsText}`;
                     } else {
                         action = "P";
-                        recommendation = `正打 閒 (P) [優勢差: ${diff.toFixed(1)}]`;
+                        recommendation = `正打 閒 (P) ${vsText}`;
                     }
                 } else if (diff <= diffThreshold && totalConf >= confThreshold) {
-                    recommendation = "鎖死觀望 (路單衝突/無顯著優勢)";
+                    recommendation = `鎖死觀望 (路單衝突) ${vsText}`;
                 } else {
-                    recommendation = "鎖死觀望 (無明顯特徵)";
+                    recommendation = `鎖死觀望 (無明顯特徵) ${vsText}`;
                 }
 
                 return { status: "success", action: action, recommendation: recommendation, cores_analysis: cores_analysis };
@@ -731,7 +731,7 @@
             recommendUI.classList.remove('ai-thinking');
             
             if (data.status === 'success') {
-                recommendUI.innerText = data.recommendation;
+                recommendUI.innerHTML = data.recommendation; // 改用 innerHTML 以支援換行排版
                 document.getElementById('bet-amount').innerText = `$${state.currentBetAmount}`;
                 if (data.action === 'B') {
                     recommendUI.style.color = 'var(--red-color)'; recommendUI.style.textShadow = '0 0 15px rgba(239, 68, 68, 0.6)';
@@ -741,7 +741,7 @@
                     recommendUI.style.color = 'var(--gold-color)'; recommendUI.style.textShadow = '0 0 15px rgba(251, 191, 36, 0.4)';
                 }
             } else {
-                recommendUI.innerText = data.recommendation;
+                recommendUI.innerHTML = data.recommendation;
                 recommendUI.style.color = 'var(--gold-color)'; recommendUI.style.textShadow = 'none';
                 document.getElementById('bet-amount').innerText = "$0";
             }
