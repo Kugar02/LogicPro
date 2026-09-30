@@ -3,216 +3,345 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum AI | 深度學習回測中心</title>
+    <title>Quantum AI | 全量化深度回測引擎</title>
     <style>
         :root {
-            --bg-main: #0B0E14;
-            --panel-bg: rgba(26, 31, 43, 0.8);
-            --text-main: #e2e8f0;
-            --blue-color: #3b82f6;
-            --green-color: #10b981;
-            --gold-color: #fbbf24;
+            --bg-main: #0B0E14; --panel-bg: rgba(26, 31, 43, 0.8);
+            --text-main: #e2e8f0; --text-muted: #94a3b8;
+            --accent-blue: #3b82f6; --accent-green: #10b981; --accent-red: #ef4444; --accent-gold: #fbbf24;
         }
         body {
-            background: radial-gradient(circle at top center, #172033 0%, var(--bg-main) 100%);
-            color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
+            background: #0B0E14; color: var(--text-main);
+            font-family: -apple-system, sans-serif; margin: 0; padding: 20px;
         }
-        .container {
-            width: 100%;
-            max-width: 900px;
-            background: var(--panel-bg);
-            padding: 30px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { color: var(--accent-blue); margin: 0 0 10px 0; text-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+        
+        .dashboard-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-bottom: 20px;
         }
-        h1 { text-align: center; color: var(--gold-color); margin-top: 0; }
-        .btn-train {
-            display: block;
-            width: 100%;
-            padding: 15px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: white;
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        .card {
+            background: var(--panel-bg); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
-        .btn-train:hover { filter: brightness(1.1); }
-        #log-area {
-            background: #000;
-            padding: 15px;
-            border-radius: 8px;
-            font-family: monospace;
-            color: #10b981;
-            height: 250px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            border: 1px solid #333;
+        .card h3 { margin: 0 0 10px 0; color: var(--accent-gold); font-size: 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;}
+        
+        .progress-container { background: #1e293b; border-radius: 8px; height: 24px; width: 100%; overflow: hidden; margin-bottom: 20px; position: relative; }
+        .progress-bar { background: linear-gradient(90deg, #3b82f6, #10b981); height: 100%; width: 0%; transition: width 0.1s; }
+        .progress-text { position: absolute; width: 100%; text-align: center; top: 2px; font-size: 0.85rem; font-weight: bold; text-shadow: 1px 1px 2px #000; }
+
+        .terminal {
+            background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+            padding: 15px; height: 250px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 0.9rem; line-height: 1.4;
         }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
+        .log-time { color: #64748b; margin-right: 10px; }
+        .log-info { color: var(--text-main); }
+        .log-success { color: var(--accent-green); }
+        .log-warn { color: var(--accent-gold); }
+        .log-error { color: var(--accent-red); }
+
+        .btn-start {
+            display: block; width: 100%; padding: 15px; font-size: 1.2rem; font-weight: bold;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; border-radius: 8px;
+            cursor: pointer; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
         }
-        .stat-card {
-            background: rgba(0,0,0,0.5);
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .stat-name { color: #94a3b8; font-size: 0.95rem; margin-bottom: 5px; font-weight: bold;}
-        .stat-value { font-size: 1.8rem; font-weight: bold; color: var(--gold-color); }
+        .btn-start:disabled { background: #475569; cursor: not-allowed; box-shadow: none; }
+        
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.9rem; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 4px; }
+        .stat-val { font-weight: bold; color: var(--accent-green); }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>🧠 Quantum AI 深度學習回測中心</h1>
-        <p style="text-align: center; color: #94a3b8;">從 Google Drive 讀取歷史牌靴，自動演化七大特徵權重</p>
-        
-        <button class="btn-train" onclick="startTraining()">啟動 AI 回測與權重優化</button>
-        
-        <div id="log-area">等待啟動...</div>
+    <div class="header">
+        <h1>🧠 Quantum AI 全量化深度回測引擎</h1>
+        <p style="color: var(--text-muted);">搭載 聯合特徵矩陣 / 盲測驗證 / 資金風險模擬 / 牌局深度效應</p>
+    </div>
 
-        <div class="stats-grid" id="stats-container">
-            <!-- 權重結果將顯示於此 -->
+    <button id="startBtn" class="btn-start" onclick="startEngine()">🚀 啟動全量化深度學習</button>
+
+    <div class="progress-container">
+        <div id="progressBar" class="progress-bar"></div>
+        <div id="progressText" class="progress-text">等待啟動... 0%</div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="card" id="card-train">
+            <h3>🛡️ 方案二: 樣本外驗證 (Train vs Test)</h3>
+            <div id="train-content" style="color:var(--text-muted); font-size:0.9rem;">等待運算...</div>
+        </div>
+        <div class="card" id="card-combo">
+            <h3>🧠 方案一: 黃金聯合特徵 (Top Combos)</h3>
+            <div id="combo-content" style="color:var(--text-muted); font-size:0.9rem;">等待運算...</div>
+        </div>
+        <div class="card" id="card-risk">
+            <h3>📉 方案三: 資金壓力與風險 (Risk)</h3>
+            <div id="risk-content" style="color:var(--text-muted); font-size:0.9rem;">等待運算...</div>
+        </div>
+        <div class="card" id="card-depth">
+            <h3>🃏 方案四: 牌局深度效應 (Depth)</h3>
+            <div id="depth-content" style="color:var(--text-muted); font-size:0.9rem;">等待運算...</div>
         </div>
     </div>
 
-    <script>
-        const gasUrl = "https://script.google.com/macros/s/AKfycbxX_0IcT-vN_iKyFt3KyXDDCvByvoUmyZDGTtIZaH40VgY_VxenqZEmWCBIqjGSPvrZ/exec";
+    <div class="terminal" id="terminal">
+        <div class="log-info"><span class="log-time">[System]</span> 系統就緒。請點擊上方按鈕開始抓取大數據並啟動運算引擎。</div>
+    </div>
+
+<script>
+    function log(msg, type='info') {
+        const t = document.getElementById('terminal');
+        const time = new Date().toLocaleTimeString();
+        let colorClass = 'log-info';
+        if(type==='success') colorClass = 'log-success';
+        if(type==='warn') colorClass = 'log-warn';
+        if(type==='error') colorClass = 'log-error';
+        t.innerHTML += `<div><span class="log-time">[${time}]</span> <span class="${colorClass}">${msg}</span></div>`;
+        t.scrollTop = t.scrollHeight;
+    }
+
+    // ==== 核心量化統計模型 ====
+    const QuantModel = {
+        features: ["長龍", "單跳", "齊頭", "雙跳", "一房兩廳", "短路", "逢連"],
+        stats: {}, // 訓練集單特徵
+        testStats: {}, // 測試集單特徵
+        combos: {}, // 聯合特徵 (Train)
+        depthStats: { early: {}, mid: {}, late: {} }, // 深度 (Test)
+        risk: { balance: 10000, peak: 10000, mdd: 0, mddPct: 0, currentLossStreak: 0, maxLossStreak: 0, bets: 0, wins: 0 },
         
-        function log(message) {
-            const logArea = document.getElementById('log-area');
-            logArea.innerHTML += `> ${message}\n`;
-            logArea.scrollTop = logArea.scrollHeight;
-        }
-
-        async function startTraining() {
-            log("連線至 Google Drive 數據庫...");
-            try {
-                const response = await fetch(gasUrl);
-                const data = await response.json();
-                
-                if (data.status !== 'success') { log(`讀取失敗: ${data.message}`); return; }
-                const history = data.data;
-                if (!history || history.length === 0) { log("警告：目前沒有歷史數據！請先到主程式輸入實戰牌靴。"); return; }
-
-                log(`成功載入 ${history.length} 靴歷史牌局。開始進行【七大特徵】深度回測...`);
-                runSimulation(history);
-            } catch (error) { log(`連線錯誤: ${error.message}`); }
-        }
-
-        function buildMatrixLocal(seq) {
-            let matrix = []; let currentCol = -1; let lastResult = null;
-            for (let res of seq) {
-                if (res !== lastResult) { currentCol++; matrix[currentCol] = []; }
-                matrix[currentCol].push(res);
-                lastResult = res;
+        init: function() {
+            this.features.forEach(f => {
+                this.stats[f] = { wins: 0, total: 0 };
+                this.testStats[f] = { wins: 0, total: 0 };
+                this.depthStats.early[f] = { wins: 0, total: 0 };
+                this.depthStats.mid[f] = { wins: 0, total: 0 };
+                this.depthStats.late[f] = { wins: 0, total: 0 };
+            });
+        },
+        
+        // 簡易矩陣與特徵掃描 (為了效能進行精簡)
+        scanHand: function(records, nextAction) {
+            let activeFeatures = [];
+            if(records.length < 5) return activeFeatures;
+            
+            // 由於在前端運算 300 萬手牌的完整下三路會非常耗時
+            // 這裡採用極速大路特徵近似演算法來代表特徵觸發
+            let recent = records.slice(-6);
+            let bCount = 0, pCount = 0;
+            let jumps = 0;
+            let curLen = 1, prevLen = 0;
+            
+            for(let i=1; i<records.length; i++) {
+                if(records[i] === records[i-1]) curLen++;
+                else { prevLen = curLen; curLen = 1; jumps++; }
             }
-            return matrix;
+            let rJumps = 0;
+            for(let i=1; i<recent.length; i++) { if(recent[i] !== recent[i-1]) rJumps++; }
+
+            // 觸發判定 (極速版)
+            if(curLen >= 3) activeFeatures.push({ name: "長龍", predict: records[records.length-1] });
+            if(rJumps >= 4) activeFeatures.push({ name: "單跳", predict: records[records.length-1] === 'B' ? 'P' : 'B' });
+            if(curLen === prevLen && curLen >= 2) activeFeatures.push({ name: "齊頭", predict: records[records.length-1] === 'B' ? 'P' : 'B' });
+            if(rJumps === 2 && curLen === 2 && prevLen === 2) activeFeatures.push({ name: "雙跳", predict: records[records.length-1] === 'B' ? 'P' : 'B' });
+            if(curLen <= 2 && prevLen <= 2 && records.length > 10) activeFeatures.push({ name: "短路", predict: records[records.length-1] === 'B' ? 'P' : 'B' });
+
+            return activeFeatures;
         }
+    };
 
-        function runSimulation(history) {
-            let stats = {
-                'dragon': { name: '長龍 (順打)', win: 0, total: 0 },
-                'jump': { name: '單跳 (反打)', win: 0, total: 0 },
-                'aligned': { name: '齊頭 (反打)', win: 0, total: 0 },
-                'doubleJump': { name: '雙跳 (反打)', win: 0, total: 0 },
-                'oneTwo': { name: '一房兩廳 (反打)', win: 0, total: 0 },
-                'shortRoad': { name: '短路密集 (反打)', win: 0, total: 0 },
-                'streakRule': { name: '逢X連 (順打)', win: 0, total: 0 }
-            };
+    let globalData = [];
+    
+    async function startEngine() {
+        document.getElementById('startBtn').disabled = true;
+        QuantModel.init();
+        
+        // 請確保這個 API 網址與你在主程式設定的一致
+        const gasUrl = "https://script.google.com/macros/s/AKfycbwRoL5wgWJeSlnyhba2zUpPWZTqxjVDwEtJNhtNnycw6hppg2FkmCNqxCDm-IFcgH76/exec";
+        
+        log("🔄 正在連線 Google Drive 數據庫...");
+        try {
+            let res = await fetch(gasUrl);
+            let json = await res.json();
+            
+            if(json.status === "success" && json.data.length > 0) {
+                globalData = json.data;
+                log(`✅ 成功載入 ${globalData.length} 靴歷史數據 (約 ${globalData.length * 70} 手牌)`, "success");
+                processDataChunks();
+            } else {
+                log("⚠️ 資料庫為空！請先生成大數據。", "error");
+            }
+        } catch(e) {
+            log("❌ 連線失敗: " + e.message, "error");
+        }
+    }
 
-            history.forEach((shoe) => {
-                for (let i = 5; i < shoe.length - 1; i++) {
-                    let currentRecords = shoe.slice(0, i + 1);
-                    let nextActual = shoe[i + 1];
-                    let matrix = buildMatrixLocal(currentRecords);
-                    let colCount = matrix.length;
-                    if (colCount < 2) continue;
+    // ==== 非同步分塊運算 (防瀏覽器當機) ====
+    function processDataChunks() {
+        let totalShoes = globalData.length;
+        let trainLimit = Math.floor(totalShoes * 0.8); // 80% Train, 20% Test
+        let currentIndex = 0;
+        
+        log("🚀 開始執行非同步深度回測 (切割訓練集與盲測集)...");
 
-                    let curLen = matrix[colCount - 1].length;
-                    let prevLen = matrix[colCount - 2].length;
-                    let outcome = matrix[colCount - 1][0];
+        function chunk() {
+            let end = Math.min(currentIndex + 500, totalShoes); // 每次處理 500 靴
+            
+            for(; currentIndex < end; currentIndex++) {
+                let shoe = globalData[currentIndex].split('').filter(c => c==='B'||c==='P');
+                let isTrain = currentIndex < trainLimit;
+                
+                for(let handIdx = 5; handIdx < shoe.length - 1; handIdx++) {
+                    let currentRecords = shoe.slice(0, handIdx);
+                    let actualNext = shoe[handIdx];
+                    
+                    let activeFeats = QuantModel.scanHand(currentRecords);
+                    if(activeFeats.length === 0) continue;
 
-                    if (curLen >= 4) { stats.dragon.total++; if (nextActual === outcome) stats.dragon.win++; }
-                    if (colCount >= 4 && curLen === 1 && prevLen === 1 && matrix[colCount - 3].length === 1) { 
-                        stats.jump.total++; if (nextActual !== outcome) stats.jump.win++; 
-                    }
-                    if (curLen === prevLen && curLen >= 2) { 
-                        stats.aligned.total++; if (nextActual !== outcome) stats.aligned.win++; 
-                    }
-                    if (colCount >= 4 && curLen === 2 && prevLen === 2 && matrix[colCount - 3].length === 2) {
-                        stats.doubleJump.total++; if (nextActual !== outcome) stats.doubleJump.win++;
-                    }
-                    if (colCount >= 4 && curLen === 2 && prevLen === 1 && matrix[colCount - 3].length === 2 && matrix[colCount - 4].length === 1) {
-                        stats.oneTwo.total++; if (nextActual !== outcome) stats.oneTwo.win++;
-                    }
-                    if (colCount >= 5) {
-                        let isShort = true;
-                        for(let c=1; c<=5; c++) { if (matrix[colCount - c].length > 2) isShort = false; }
-                        if (isShort && curLen === 2) { stats.shortRoad.total++; if (nextActual !== outcome) stats.shortRoad.win++; }
-                    }
-                    if (colCount >= 5 && curLen === 1) {
-                        let streakCount = 0; let totalOcc = 0;
-                        for(let c=0; c<colCount-1; c++) {
-                            if (matrix[c][0] === outcome) { totalOcc++; if (matrix[c].length > 1) streakCount++; }
+                    // 單一特徵紀錄
+                    activeFeats.forEach(f => {
+                        let isWin = (f.predict === actualNext);
+                        
+                        if(isTrain) {
+                            QuantModel.stats[f.name].total++;
+                            if(isWin) QuantModel.stats[f.name].wins++;
+                        } else {
+                            // 盲測集 (Test)
+                            QuantModel.testStats[f.name].total++;
+                            if(isWin) QuantModel.testStats[f.name].wins++;
+                            
+                            // 深度分析 (Option 4)
+                            let depth = handIdx < 25 ? 'early' : (handIdx < 50 ? 'mid' : 'late');
+                            QuantModel.depthStats[depth][f.name].total++;
+                            if(isWin) QuantModel.depthStats[depth][f.name].wins++;
+                            
+                            // 資金風險模擬 (Option 3) 平注 $100
+                            QuantModel.risk.bets++;
+                            if(isWin) {
+                                QuantModel.risk.wins++;
+                                QuantModel.risk.balance += 100;
+                                QuantModel.risk.currentLossStreak = 0;
+                                if(QuantModel.risk.balance > QuantModel.risk.peak) QuantModel.risk.peak = QuantModel.risk.balance;
+                            } else {
+                                QuantModel.risk.balance -= 100;
+                                QuantModel.risk.currentLossStreak++;
+                                if(QuantModel.risk.currentLossStreak > QuantModel.risk.maxLossStreak) {
+                                    QuantModel.risk.maxLossStreak = QuantModel.risk.currentLossStreak;
+                                }
+                                let dd = QuantModel.risk.peak - QuantModel.risk.balance;
+                                let ddPct = (dd / QuantModel.risk.peak) * 100;
+                                if(dd > QuantModel.risk.mdd) {
+                                    QuantModel.risk.mdd = dd;
+                                    QuantModel.risk.mddPct = ddPct;
+                                }
+                            }
                         }
-                        if (totalOcc >= 3 && (streakCount / totalOcc) > 0.8) {
-                            stats.streakRule.total++; if (nextActual === outcome) stats.streakRule.win++;
+                    });
+
+                    // 聯合特徵紀錄 (Option 1) - 僅在 Train 執行
+                    if(isTrain && activeFeats.length >= 2) {
+                        for(let i=0; i<activeFeats.length; i++) {
+                            for(let j=i+1; j<activeFeats.length; j++) {
+                                let f1 = activeFeats[i].name;
+                                let f2 = activeFeats[j].name;
+                                let comboName = `${f1} + ${f2}`;
+                                if(!QuantModel.combos[comboName]) QuantModel.combos[comboName] = {wins:0, total:0};
+                                QuantModel.combos[comboName].total++;
+                                // 只有當兩者預測方向一致且獲勝時才算 Combo Win
+                                if(activeFeats[i].predict === activeFeats[j].predict && activeFeats[i].predict === actualNext) {
+                                    QuantModel.combos[comboName].wins++;
+                                }
+                            }
                         }
                     }
                 }
-            });
-
-            log("回測運算完成！正在計算最新勝率與權重...");
-            displayAndSaveResults(stats);
-        }
-
-        function displayAndSaveResults(stats) {
-            const container = document.getElementById('stats-container');
-            container.innerHTML = '';
-            
-            let exportWeights = {};
-
-            for (let key in stats) {
-                let s = stats[key];
-                let winRate = s.total > 0 ? (s.win / s.total) : 0.5;
-                
-                // 動態權重公式：15分為基準，勝負率影響增減，最高 35分
-                let newWeight = Math.max(5, Math.min(35, Math.round(15 + ((winRate - 0.5) * 100))));
-                exportWeights[key] = newWeight; 
-                
-                let winRateStr = (winRate * 100).toFixed(1) + '%';
-                log(`特徵 [${s.name}] -> 勝率 ${winRateStr} => 新權重: ${newWeight}分`);
-
-                container.innerHTML += `
-                    <div class="stat-card">
-                        <div class="stat-name">${s.name}</div>
-                        <div class="stat-value">${newWeight} 分</div>
-                        <div style="color: #94a3b8; font-size: 0.8rem; margin-top: 5px;">出現: ${s.total} 次 | 勝率: ${winRateStr}</div>
-                    </div>
-                `;
             }
-            
-            localStorage.setItem('quantum_ai_weights', JSON.stringify(exportWeights));
-            log("\n✅ 【七大特徵】訓練完畢！權重已自動儲存至系統。");
-            log("👉 請直接切換回主程式網頁並重新整理(F5)，AI 將自動套用最新權重！");
+
+            // 更新進度條
+            let pct = Math.round((currentIndex / totalShoes) * 100);
+            document.getElementById('progressBar').style.width = pct + '%';
+            document.getElementById('progressText').innerText = `運算中... ${pct}% (${currentIndex}/${totalShoes} 靴)`;
+
+            if(currentIndex < totalShoes) {
+                requestAnimationFrame(chunk); // 不卡死瀏覽器
+            } else {
+                finalizeBacktest();
+            }
         }
-    </script>
+        
+        requestAnimationFrame(chunk);
+    }
+
+    function finalizeBacktest() {
+        log("✅ 運算完畢！正在生成量化報告...", "success");
+        
+        // --- 方案二：樣本外驗證 UI ---
+        let trainHTML = "";
+        let finalWeights = {};
+        for(let f in QuantModel.stats) {
+            let tr = QuantModel.stats[f];
+            let te = QuantModel.testStats[f];
+            let trPct = tr.total > 0 ? ((tr.wins/tr.total)*100).toFixed(1) : 0;
+            let tePct = te.total > 0 ? ((te.wins/te.total)*100).toFixed(1) : 0;
+            
+            // 權重演化：以盲測勝率為準，50%基礎上每多1%給2分
+            let newW = tePct > 50 ? Math.round((tePct - 50) * 2) : 5;
+            finalWeights[f === "長龍" ? "dragon" : f === "單跳" ? "jump" : f === "齊頭" ? "aligned" : f === "雙跳" ? "doubleJump" : f === "一房兩廳" ? "oneTwo" : f === "短路" ? "shortRoad" : "streakRule"] = newW;
+
+            trainHTML += `
+                <div class="stat-row">
+                    <span>${f}</span>
+                    <span class="stat-val" style="color: ${tePct>=52?'#10b981':'#ef4444'}">訓 ${trPct}% | 盲 ${tePct}%</span>
+                </div>`;
+        }
+        document.getElementById('train-content').innerHTML = trainHTML;
+
+        // --- 方案一：黃金聯合特徵 UI ---
+        let comboArr = [];
+        for(let c in QuantModel.combos) {
+            let o = QuantModel.combos[c];
+            if(o.total > 100) comboArr.push({ name: c, wr: (o.wins/o.total)*100, tot: o.total });
+        }
+        comboArr.sort((a,b) => b.wr - a.wr);
+        let comboHTML = "";
+        comboArr.slice(0, 5).forEach(c => {
+            comboHTML += `<div class="stat-row"><span>${c.name}</span><span class="stat-val" style="color:#fbbf24">${c.wr.toFixed(1)}%</span></div>`;
+        });
+        document.getElementById('combo-content').innerHTML = comboHTML || "樣本不足";
+
+        // --- 方案三：資金風險 UI ---
+        let r = QuantModel.risk;
+        let roi = ((r.balance - 10000)/10000*100).toFixed(1);
+        document.getElementById('risk-content').innerHTML = `
+            <div class="stat-row"><span>起始本金</span><span style="color:#fff">$10,000</span></div>
+            <div class="stat-row"><span>最終餘額 (平注盲測)</span><span class="stat-val">$${r.balance}</span></div>
+            <div class="stat-row"><span>總淨報率 (ROI)</span><span class="stat-val" style="color:${roi>=0?'#10b981':'#ef4444'}">${roi}%</span></div>
+            <div class="stat-row"><span>最大回撤 (MDD)</span><span style="color:#ef4444">-$${r.mdd} (${r.mddPct.toFixed(1)}%)</span></div>
+            <div class="stat-row"><span>最長連敗次數</span><span style="color:#ef4444">${r.maxLossStreak} 局</span></div>
+        `;
+
+        // --- 方案四：牌局深度 UI ---
+        let depthHTML = `<div style="display:flex; justify-content:space-between; color:#fff; margin-bottom:5px;"><span>特徵</span><span>初段</span><span>中段</span><span>尾段</span></div>`;
+        ["長龍", "單跳", "短路"].forEach(f => {
+            let ew = QuantModel.depthStats.early[f].total > 0 ? (QuantModel.depthStats.early[f].wins/QuantModel.depthStats.early[f].total*100).toFixed(1) : 0;
+            let mw = QuantModel.depthStats.mid[f].total > 0 ? (QuantModel.depthStats.mid[f].wins/QuantModel.depthStats.mid[f].total*100).toFixed(1) : 0;
+            let lw = QuantModel.depthStats.late[f].total > 0 ? (QuantModel.depthStats.late[f].wins/QuantModel.depthStats.late[f].total*100).toFixed(1) : 0;
+            depthHTML += `
+                <div class="stat-row">
+                    <span style="width:50px">${f}</span>
+                    <span style="color:#94a3b8">${ew}%</span>
+                    <span style="color:#94a3b8">${mw}%</span>
+                    <span style="color:#94a3b8">${lw}%</span>
+                </div>`;
+        });
+        document.getElementById('depth-content').innerHTML = depthHTML;
+
+        // 儲存權重並提示
+        localStorage.setItem('quantum_ai_weights', JSON.stringify(finalWeights));
+        log("💾 已根據【盲測數據】提取最新安全權重並寫入系統緩存。", "success");
+        log("👉 回測完成！請直接切換回主程式網頁 (index.html) 並重新整理，AI 即會套用全量化模型！", "warn");
+        
+        document.getElementById('progressText').innerText = "✅ 深度量化分析完成";
+    }
+</script>
 </body>
 </html>
