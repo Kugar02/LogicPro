@@ -56,7 +56,7 @@
             color: var(--text-muted);
         }
         .strategy-panel select, .strategy-panel input {
-            padding: 6px 12px;
+            padding: 6px 10px;
             border-radius: 6px;
             border: 1px solid #334155;
             background-color: rgba(15, 23, 42, 0.8);
@@ -266,9 +266,12 @@
     <div class="top-container">
         <!-- 策略設定區 -->
         <div class="strategy-panel">
-            <label>本金設定: $<input type="number" id="initial-bankroll" value="10000" style="width: 100px;" onchange="updateBankrollUI()"></label>
-            <label>基碼設定: $<input type="number" id="base-bet" value="1000" style="width: 80px;"></label>
-            <label>注碼策略: 
+            <label>本金: $<input type="number" id="initial-bankroll" value="10000" style="width: 80px;" onchange="updateBankrollUI()"></label>
+            <label>基碼: $<input type="number" id="base-bet" value="1000" style="width: 60px;"></label>
+            <!-- 新增風控設定 -->
+            <label>止盈(+$): <input type="number" id="take-profit" value="5000" style="width: 60px;"></label>
+            <label>止損(-$): <input type="number" id="stop-loss" value="5000" style="width: 60px;"></label>
+            <label>策略: 
                 <select id="bet-strategy">
                     <option value="flat">平注 (永遠下基碼)</option>
                     <option value="fibonacci">斐波那契 (退二進一)</option>
@@ -323,8 +326,8 @@
         <button class="btn-banker" onclick="addRecord('B')">🔴 開莊 (B)</button>
         <button class="btn-player" onclick="addRecord('P')">🔵 開閒 (P)</button>
         <button class="btn-tie" onclick="addRecord('T')">🟢 開和 (T)</button>
-        <button class="btn-action" onclick="undoRecord()">↩️️ 撤銷</button>
-        <!-- 新增：實戰下注切換按鈕 -->
+        <button class="btn-action" onclick="undoRecord()">↩ 撤銷</button>
+        <!-- 實戰下注切換按鈕 -->
         <button class="btn-action" id="btn-analyze" onclick="toggleAnalysis()" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);">🎯 開始實戰下注</button>
         <button class="btn-action" onclick="resetBoard()">🗑️ 結算新靴</button>
     </div>
@@ -347,7 +350,8 @@
         const state = {
             records: [], history: [], netProfit: 0, win: 0, loss: 0,
             lastAiAction: 'NONE', currentBetAmount: 0, consecutiveLosses: 0, fibIndex: 0,
-            isAnalyzing: false // 新增狀態：判斷目前是否在「實戰下注模式」
+            isAnalyzing: false, // 判斷目前是否在「實戰下注模式」
+            sessionStartProfit: 0 // 新增：用於記錄每次開始下注時的利潤基準，作為止盈止損的起點
         };
         const fibSequence = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610];
 
@@ -356,6 +360,8 @@
             state.isAnalyzing = !state.isAnalyzing;
             const btn = document.getElementById('btn-analyze');
             if (state.isAnalyzing) {
+                // 將目前的盈虧設為止盈止損的 0 基準線
+                state.sessionStartProfit = state.netProfit;
                 btn.innerHTML = '🛑 暫停下注 (純觀察)';
                 btn.style.background = 'linear-gradient(135deg, #ef4444, #b91c1c)';
                 btn.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
@@ -694,6 +700,34 @@
             }
 
             state.records.push(result);
+
+            // ==========================================
+            // 🛡️ 風控機制：計算當前利潤並判定是否觸發止盈/止損
+            // ==========================================
+            if (state.isAnalyzing) {
+                const tp = parseInt(document.getElementById('take-profit').value) || 0;
+                const sl = parseInt(document.getElementById('stop-loss').value) || 0;
+                
+                // 計算從這次點擊「開始下注」後的這波段淨利潤
+                const sessionProfit = state.netProfit - state.sessionStartProfit;
+
+                if (tp > 0 && sessionProfit >= tp) {
+                    // 觸發止盈
+                    state.isAnalyzing = false;
+                    const btn = document.getElementById('btn-analyze');
+                    btn.innerHTML = '🏆 觸發止盈 (繼續運行分析)';
+                    btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                    btn.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
+                } else if (sl > 0 && sessionProfit <= -sl) {
+                    // 觸發止損
+                    state.isAnalyzing = false;
+                    const btn = document.getElementById('btn-analyze');
+                    btn.innerHTML = '🛑 觸發止損 (轉為純觀察)';
+                    btn.style.background = 'linear-gradient(135deg, #64748b, #475569)';
+                    btn.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.4)';
+                }
+            }
+
             updateBankrollUI();
             renderBeadPlate();
             analyzeWithJS();
@@ -714,6 +748,7 @@
             // 完全重置當前狀態
             state.records = []; state.history = []; state.netProfit = 0; state.win = 0; state.loss = 0;
             state.lastAiAction = 'NONE'; state.currentBetAmount = 0; state.consecutiveLosses = 0; state.fibIndex = 0;
+            state.sessionStartProfit = 0;
             
             // 強制切換為純觀察模式
             state.isAnalyzing = false;
@@ -840,10 +875,18 @@
 
             recommendUI.classList.remove('ai-thinking');
             
-            // 視覺化回饋：如果在觀察模式，加上文字提示
-            const modeWarning = !state.isAnalyzing 
-                ? "<span style='font-size: 0.6em; color: #94a3b8; display:block; margin-top:5px;'>✏️ 觀察輸入模式 (尚未點擊開始下注)</span>" 
-                : "";
+            // 視覺化回饋：如果在觀察模式，根據目前觸發的風控狀態顯示對應文字
+            let modeWarning = "";
+            if (!state.isAnalyzing) {
+                const btnText = document.getElementById('btn-analyze').innerText;
+                if (btnText.includes('止盈')) {
+                    modeWarning = "<span style='font-size: 0.6em; color: #10b981; display:block; margin-top:5px;'>🏆 已達止盈目標 (目前為觀察模式)</span>";
+                } else if (btnText.includes('止損')) {
+                    modeWarning = "<span style='font-size: 0.6em; color: #ef4444; display:block; margin-top:5px;'>🛑 已達止損上限 (目前為純觀察模式)</span>";
+                } else {
+                    modeWarning = "<span style='font-size: 0.6em; color: #94a3b8; display:block; margin-top:5px;'>✏️ 觀察輸入模式 (尚未點擊開始下注)</span>";
+                }
+            }
 
             if (data.status === 'success') {
                 recommendUI.innerHTML = data.recommendation + modeWarning; 
@@ -992,6 +1035,7 @@
 
             state.records = []; state.history = []; state.netProfit = 0; state.win = 0; state.loss = 0;
             state.lastAiAction = 'NONE'; state.currentBetAmount = 0; state.consecutiveLosses = 0; state.fibIndex = 0;
+            state.sessionStartProfit = 0;
             
             // 重置時切回預設狀態（關閉實戰分析模式）
             state.isAnalyzing = false;
