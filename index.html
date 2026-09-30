@@ -398,7 +398,6 @@
                 }
                 return matrix;
             },
-            // 修正：產生 Red 和 Blue，而非與 Banker 衝突的 B
             deriveSequence: function(matrix, offset) {
                 let seq = [];
                 for (let col = 0; col < matrix.length; col++) {
@@ -418,7 +417,6 @@
                 }
                 return seq;
             },
-            // 新增：模擬下一口真正的探路顏色
             simulateNext: function(records, nextAction, offset) {
                 let testRecords = [...records, nextAction];
                 let testBigRoad = this.buildMatrix(testRecords);
@@ -548,17 +546,20 @@
                 let smWeight = getMappedWeight(smallRoad, simB_Small, simP_Small);
                 let roWeight = getMappedWeight(roachRoad, simB_Roach, simP_Roach);
 
+                // 【核心對沖計算：分離莊閒總分】
                 let totalB = baseWeight.B + bigRoad.weight.B + beWeight.B + smWeight.B + roWeight.B;
                 let totalP = baseWeight.P + bigRoad.weight.P + beWeight.P + smWeight.P + roWeight.P;
                 let totalConf = bigRoad.confidence + bigEyeBoy.confidence + smallRoad.confidence + roachRoad.confidence;
 
+                // 【核心淨差值判斷】
                 const diff = Math.abs(totalB - totalP);
-                const confThreshold = 40; // 降低觸發門檻，但要求對沖差值大
-                const diffThreshold = 15; // 必須有 15 分以上的優勢差才下注
+                const confThreshold = 40; // 總信心指數必須達到 40 分
+                const diffThreshold = 15; // 淨差值必須大於 15 分才出手
 
                 let action = "NONE";
                 let recommendation = "觀望 (防禦機制觸發)";
 
+                // 【雙重門檻過濾】
                 if (diff > diffThreshold && totalConf >= confThreshold) {
                     if (totalB > totalP) {
                         action = "B";
@@ -825,7 +826,6 @@
                         let outcome = typeof cellData === 'string' ? cellData : cellData.outcome;
                         let ties = typeof cellData === 'string' ? 0 : cellData.ties;
                         
-                        // 修復：正確判斷 Red 與 Blue
                         let color = (styleType === 'big-road') 
                             ? (outcome === 'B' ? 'var(--red-color)' : 'var(--blue-color)') 
                             : (outcome === 'Red' ? 'var(--red-color)' : 'var(--blue-color)');
