@@ -268,9 +268,9 @@
             <label>基碼設定: $<input type="number" id="base-bet" value="1000" style="width: 80px;"></label>
             <label>注碼策略: 
                 <select id="bet-strategy">
+                    <option value="flat">平注 (永遠下基碼)</option>
                     <option value="fibonacci">斐波那契 (退二進一)</option>
                     <option value="martingale">馬丁格爾 (輸後翻倍)</option>
-                    <option value="flat">平注 (永遠下基碼)</option>
                 </select>
             </label>
         </div>
@@ -347,7 +347,7 @@
         const fibSequence = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610];
 
         // ==========================================
-        // 🧠 Quantum Engine (修復探路與權重對沖版本)
+        // 🧠 Quantum Engine (修復動態門檻與對沖機制)
         // ==========================================
         const QuantumEngine = {
             THEORETICAL_B: 50.68,
@@ -526,7 +526,7 @@
                     return { status: "waiting", recommendation: "等待數據累積...", action: "NONE", bet_amount: 0, cores_analysis: cores_analysis };
                 }
 
-                // 真正的探路映射：如果下一把出莊/閒，下三路會畫什麼顏色
+                // 真正的探路映射
                 let simB_BigEye = this.simulateNext(records, 'B', 1);
                 let simB_Small = this.simulateNext(records, 'B', 2);
                 let simB_Roach = this.simulateNext(records, 'B', 3);
@@ -535,7 +535,6 @@
                 let simP_Small = this.simulateNext(records, 'P', 2);
                 let simP_Roach = this.simulateNext(records, 'P', 3);
 
-                // 權重轉換器
                 let getMappedWeight = (derivedRoad, simBColor, simPColor) => {
                     let weightForB = derivedRoad.weight[simBColor] || 0;
                     let weightForP = derivedRoad.weight[simPColor] || 0;
@@ -546,16 +545,24 @@
                 let smWeight = getMappedWeight(smallRoad, simB_Small, simP_Small);
                 let roWeight = getMappedWeight(roachRoad, simB_Roach, simP_Roach);
 
-                // 【核心對沖計算：分離莊閒總分】
+                // 計算分離莊閒總分
                 let totalB = baseWeight.B + bigRoad.weight.B + beWeight.B + smWeight.B + roWeight.B;
                 let totalP = baseWeight.P + bigRoad.weight.P + beWeight.P + smWeight.P + roWeight.P;
                 let totalConf = bigRoad.confidence + bigEyeBoy.confidence + smallRoad.confidence + roachRoad.confidence;
 
-                // 【核心淨差值判斷】
-                const diff = Math.abs(totalB - totalP);
-                const confThreshold = 40; // 總信心指數必須達到 40 分
-                const diffThreshold = 15; // 淨差值必須大於 15 分才出手
+                // ===== 【修復：動態門檻 (Dynamic Threshold)】 =====
+                let w = this.weightsConfig;
+                // 計算當前所有特徵權重的總和 (代表系統極限理論最高分)
+                const maxPossibleWeight = w.dragon + w.jump + w.aligned + w.doubleJump + w.oneTwo + w.shortRoad + w.streakRule;
+                
+                // 動態淨差值門檻：取最高潛力總分的 15% (並設立最低底線 10 分)
+                const diffThreshold = Math.max(10, maxPossibleWeight * 0.15); 
+                
+                // 信心門檻 (Conf)：確保至少觸發一定的特徵數量
+                const confThreshold = 35; 
+                // ===================================================
 
+                const diff = Math.abs(totalB - totalP);
                 let action = "NONE";
                 let recommendation = "觀望 (防禦機制觸發)";
 
@@ -563,13 +570,13 @@
                 if (diff > diffThreshold && totalConf >= confThreshold) {
                     if (totalB > totalP) {
                         action = "B";
-                        recommendation = "正打 莊 (B)";
+                        recommendation = `正打 莊 (B) [優勢差: ${diff.toFixed(1)}]`;
                     } else {
                         action = "P";
-                        recommendation = "正打 閒 (P)";
+                        recommendation = `正打 閒 (P) [優勢差: ${diff.toFixed(1)}]`;
                     }
                 } else if (diff <= diffThreshold && totalConf >= confThreshold) {
-                    recommendation = "鎖死觀望 (路單衝突/無優勢)";
+                    recommendation = "鎖死觀望 (路單衝突/無顯著優勢)";
                 } else {
                     recommendation = "鎖死觀望 (無明顯特徵)";
                 }
