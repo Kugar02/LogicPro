@@ -128,7 +128,7 @@
         }
         .ai-cores {
             display: flex;
-            gap: 10px;
+            gap: 15px;
             justify-content: space-between;
             flex-wrap: wrap;
         }
@@ -138,11 +138,12 @@
             border-radius: 8px;
             padding: 10px;
             flex: 1;
-            min-width: 80px;
+            min-width: 90px;
             text-align: center;
             display: flex;
             flex-direction: column;
             gap: 5px;
+            position: relative;
         }
         .core-name { font-size: 0.85rem; color: var(--text-muted); }
         .core-rec { font-size: 1.3rem; font-weight: bold; }
@@ -347,7 +348,7 @@
         const fibSequence = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610];
 
         // ==========================================
-        // 🧠 Quantum Engine (修復動態門檻與對沖機制)
+        // 🧠 Quantum Engine (整合熱度追蹤與熵值防禦)
         // ==========================================
         const QuantumEngine = {
             THEORETICAL_B: 50.68,
@@ -422,7 +423,42 @@
                 let testBigRoad = this.buildMatrix(testRecords);
                 let testDerived = this.deriveSequence(testBigRoad, offset);
                 if(testDerived.length === 0) return null;
-                return testDerived[testDerived.length - 1]; // 預期會畫出 'Red' 或 'Blue'
+                return testDerived[testDerived.length - 1]; 
+            },
+            // 🔥 動態路單熱度追蹤器：分析路單近期的純度與規律性
+            getRoadHeat: function(seq) {
+                if (!seq || seq.length < 6) return { multiplier: 1.0, text: "分析中", isHot: false };
+                let recent = seq.slice(-6); 
+                let jumps = 0;
+                for(let i = 1; i < recent.length; i++) {
+                    if(recent[i] !== recent[i-1]) jumps++;
+                }
+                // 計算跳變機率。6個元素最多5次跳變。
+                // 若 jump=0(純長龍) 或 jump=5(完美單跳)，則代表規律性極高 (Heat=1.0)
+                // 若 jump=2或3，代表路單破裂無規律 (Heat=0.0)
+                let p_jump = jumps / 5; 
+                let heat = Math.abs(p_jump - 0.5) * 2; // 正規化至 0.0 ~ 1.0
+                
+                let multiplier = 0.5 + heat; // 動態權重加成：0.5倍(削弱) ~ 1.5倍(增強)
+                let winRate = Math.round(50 + (heat * 50)); 
+                return { multiplier: multiplier, text: winRate + "%", isHot: winRate >= 80 };
+            },
+            // 🌪️ 盤路熵值計算：判斷當前是否為高風險「爛路」
+            getEntropy: function(records) {
+                if (records.length < 12) return 0;
+                let recent = records.slice(-12);
+                let tt = 0, tf = 0; // tt: 延續(連), tf: 反轉(跳)
+                for(let i = 1; i < recent.length; i++) {
+                    if(recent[i] === recent[i-1]) tt++;
+                    else tf++;
+                }
+                let total = tt + tf; 
+                if (total === 0) return 0;
+                let p_tt = tt / total;
+                let p_tf = tf / total;
+                if(p_tt === 0 || p_tf === 0) return 0;
+                // 香農熵值公式 (Shannon Entropy)
+                return -(p_tt * Math.log2(p_tt) + p_tf * Math.log2(p_tf));
             },
             detectPatterns: function(name, matrix, isDerived) {
                 let weight = { B: 0, P: 0, Red: 0, Blue: 0 };
@@ -433,7 +469,7 @@
                 if (colCount >= 2) {
                     let curLen = matrix[colCount - 1].length;
                     let prevLen = matrix[colCount - 2].length;
-                    let outcome = matrix[colCount - 1][0]; // 'B', 'P', 'Red', 'Blue'
+                    let outcome = matrix[colCount - 1][0]; 
                     
                     let opposite = '';
                     if (isDerived) {
@@ -443,29 +479,19 @@
                     }
 
                     if (curLen === prevLen && curLen >= 2) {
-                        conf += 20;
-                        weight[opposite] += w.aligned;
-                        matchedPatterns.push("齊頭");
+                        conf += 20; weight[opposite] += w.aligned; matchedPatterns.push("齊頭");
                     }
                     if (curLen >= 4) {
-                        conf += 25;
-                        weight[outcome] += w.dragon;
-                        matchedPatterns.push("長龍");
+                        conf += 25; weight[outcome] += w.dragon; matchedPatterns.push("長龍");
                     }
                     if (colCount >= 4 && curLen === 1 && prevLen === 1 && matrix[colCount - 3].length === 1) {
-                        conf += 15;
-                        weight[opposite] += w.jump;
-                        matchedPatterns.push("單跳");
+                        conf += 15; weight[opposite] += w.jump; matchedPatterns.push("單跳");
                     }
                     if (colCount >= 4 && curLen === 2 && prevLen === 2 && matrix[colCount - 3].length === 2) {
-                        conf += 20;
-                        weight[opposite] += w.doubleJump;
-                        matchedPatterns.push("雙跳");
+                        conf += 20; weight[opposite] += w.doubleJump; matchedPatterns.push("雙跳");
                     }
                     if (colCount >= 4 && curLen === 2 && prevLen === 1 && matrix[colCount - 3].length === 2 && matrix[colCount - 4].length === 1) {
-                        conf += 20;
-                        weight[opposite] += w.oneTwo;
-                        matchedPatterns.push("一房兩廳");
+                        conf += 20; weight[opposite] += w.oneTwo; matchedPatterns.push("一房兩廳");
                     }
                     if (colCount >= 5) {
                         let isShort = true;
@@ -473,9 +499,7 @@
                             if (matrix[colCount - i].length > 2) isShort = false;
                         }
                         if (isShort && curLen === 2) {
-                            conf += 15;
-                            weight[opposite] += w.shortRoad;
-                            matchedPatterns.push("短路");
+                            conf += 15; weight[opposite] += w.shortRoad; matchedPatterns.push("短路");
                         }
                     }
                     if (colCount >= 5 && curLen === 1) {
@@ -488,9 +512,7 @@
                             }
                         }
                         if (totalOcc >= 3 && (streakCount / totalOcc) > 0.8) {
-                            conf += 20;
-                            weight[outcome] += w.streakRule;
-                            matchedPatterns.push(`逢${(outcome === 'B' || outcome === 'Red') ? '莊/紅' : '閒/藍'}連`);
+                            conf += 20; weight[outcome] += w.streakRule; matchedPatterns.push(`逢${(outcome === 'B' || outcome === 'Red') ? '莊/紅' : '閒/藍'}連`);
                         }
                     }
                 }
@@ -510,15 +532,30 @@
                 const bigRoadMatrixWithTies = this.buildBigRoadMatrix(rawRecords);
                 const bigRoadMatrix = this.buildMatrix(records);
                 
-                const matBigEye = this.buildMatrix(this.deriveSequence(bigRoadMatrix, 1));
-                const matSmall = this.buildMatrix(this.deriveSequence(bigRoadMatrix, 2));
-                const matRoach = this.buildMatrix(this.deriveSequence(bigRoadMatrix, 3));
+                const seqBigEye = this.deriveSequence(bigRoadMatrix, 1);
+                const seqSmall = this.deriveSequence(bigRoadMatrix, 2);
+                const seqRoach = this.deriveSequence(bigRoadMatrix, 3);
+                
+                const matBigEye = this.buildMatrix(seqBigEye);
+                const matSmall = this.buildMatrix(seqSmall);
+                const matRoach = this.buildMatrix(seqRoach);
 
                 const bigRoad = this.detectPatterns('大路', bigRoadMatrix, false);
                 bigRoad.matrix = bigRoadMatrixWithTies;
                 const bigEyeBoy = this.detectPatterns('大眼仔', matBigEye, true);
                 const smallRoad = this.detectPatterns('小路', matSmall, true);
                 const roachRoad = this.detectPatterns('曱甴路', matRoach, true);
+
+                // 計算路單熱度
+                const heatBigRoad = this.getRoadHeat(records);
+                const heatBigEye = this.getRoadHeat(seqBigEye);
+                const heatSmall = this.getRoadHeat(seqSmall);
+                const heatRoach = this.getRoadHeat(seqRoach);
+
+                bigRoad.heatText = heatBigRoad.text; bigRoad.isHot = heatBigRoad.isHot;
+                bigEyeBoy.heatText = heatBigEye.text; bigEyeBoy.isHot = heatBigEye.isHot;
+                smallRoad.heatText = heatSmall.text; smallRoad.isHot = heatSmall.isHot;
+                roachRoad.heatText = heatRoach.text; roachRoad.isHot = heatRoach.isHot;
 
                 const cores_analysis = [bigRoad, bigEyeBoy, smallRoad, roachRoad];
 
@@ -545,10 +582,29 @@
                 let smWeight = getMappedWeight(smallRoad, simB_Small, simP_Small);
                 let roWeight = getMappedWeight(roachRoad, simB_Roach, simP_Roach);
 
+                // 【套用熱度乘數】動態放大高準度路單，削弱爛路路單
+                let bigRoadB = bigRoad.weight.B * heatBigRoad.multiplier;
+                let bigRoadP = bigRoad.weight.P * heatBigRoad.multiplier;
+                let beB = beWeight.B * heatBigEye.multiplier;
+                let beP = beWeight.P * heatBigEye.multiplier;
+                let smB = smWeight.B * heatSmall.multiplier;
+                let smP = smWeight.P * heatSmall.multiplier;
+                let roB = roWeight.B * heatRoach.multiplier;
+                let roP = roWeight.P * heatRoach.multiplier;
+
                 // 計算分離莊閒總分
-                let totalB = baseWeight.B + bigRoad.weight.B + beWeight.B + smWeight.B + roWeight.B;
-                let totalP = baseWeight.P + bigRoad.weight.P + beWeight.P + smWeight.P + roWeight.P;
+                let totalB = baseWeight.B + bigRoadB + beB + smB + roB;
+                let totalP = baseWeight.P + bigRoadP + beP + smP + roP;
                 let totalConf = bigRoad.confidence + bigEyeBoy.confidence + smallRoad.confidence + roachRoad.confidence;
+
+                // ===== 【計算盤路熵值】爛路防禦機制 =====
+                let entropy = this.getEntropy(records);
+                let entropyMultiplier = 1.0;
+                let entropyWarning = "";
+                if (entropy > 0.95 && records.length > 15) {
+                    entropyMultiplier = 1.5; // 如果盤路極度混亂，要求 1.5倍 的過濾門檻才准下注
+                    entropyWarning = `<br><span style="font-size: 0.6em; color: var(--red-color);">⚠️ 盤路高熵混亂，防禦啟動</span>`;
+                }
 
                 // ===== 【計算莊閒勝率百分比對決】 =====
                 const totalWeightSum = totalB + totalP;
@@ -556,17 +612,17 @@
                 const pctP = totalWeightSum > 0 ? ((totalP / totalWeightSum) * 100).toFixed(1) : 50.0;
                 const vsText = `<span style="font-size: 0.75em; display:block; margin-top: 5px; color: var(--text-muted);">莊 ${pctB}% vs 閒 ${pctP}%</span>`;
 
-                // 動態門檻
+                // 動態門檻 (納入熵值防禦乘數)
                 let w = this.weightsConfig;
                 const maxPossibleWeight = w.dragon + w.jump + w.aligned + w.doubleJump + w.oneTwo + w.shortRoad + w.streakRule;
-                const diffThreshold = Math.max(10, maxPossibleWeight * 0.15); 
-                const confThreshold = 35; 
+                const diffThreshold = Math.max(10, maxPossibleWeight * 0.15) * entropyMultiplier; 
+                const confThreshold = 35 * entropyMultiplier; 
 
                 const diff = Math.abs(totalB - totalP);
                 let action = "NONE";
-                let recommendation = "觀望 (防禦機制觸發)";
+                let recommendation = "";
 
-                // 【雙重門檻過濾】結合百分比對決文字
+                // 【雙重門檻過濾】
                 if (diff > diffThreshold && totalConf >= confThreshold) {
                     if (totalB > totalP) {
                         action = "B";
@@ -575,10 +631,14 @@
                         action = "P";
                         recommendation = `正打 閒 (P) ${vsText}`;
                     }
-                } else if (diff <= diffThreshold && totalConf >= confThreshold) {
-                    recommendation = `鎖死觀望 (路單衝突) ${vsText}`;
                 } else {
-                    recommendation = `鎖死觀望 (無明顯特徵) ${vsText}`;
+                    if (entropyMultiplier > 1.0) {
+                        recommendation = `鎖死觀望 (高熵爛路預警) ${vsText}`;
+                    } else if (diff <= diffThreshold && totalConf >= confThreshold) {
+                        recommendation = `鎖死觀望 (路單衝突) ${vsText}`;
+                    } else {
+                        recommendation = `鎖死觀望 (無明顯特徵) ${vsText}`;
+                    }
                 }
 
                 return { status: "success", action: action, recommendation: recommendation, cores_analysis: cores_analysis };
@@ -696,21 +756,16 @@
                         let color = res === 'B' ? 'var(--red-color)' : (res === 'P' ? 'var(--blue-color)' : 'var(--green-color)');
                         let text = res === 'B' ? '莊' : (res === 'P' ? '閒' : '和');
                         
-                        // ===== 新增：預測結果 ✅ ❌ 標記 =====
                         let badgeHtml = '';
                         let pastState = state.history[index];
-                        // 確保當下這手牌，AI 有給出實質的下注建議 (非觀望)
                         if (pastState && pastState.lastAiAction !== 'NONE' && pastState.currentBetAmount > 0) {
                             if (res === pastState.lastAiAction) {
-                                // 預測成功 ✅
                                 badgeHtml = `<div style="position:absolute; bottom:-2px; right:-2px; font-size:10px; background:#fff; border-radius:50%; width:14px; height:14px; line-height:14px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.6);">✅</div>`;
                             } else if (res !== 'T') {
-                                // 預測失敗 ❌ (開和局通常不視為失敗，因此排除 T)
                                 badgeHtml = `<div style="position:absolute; bottom:-2px; right:-2px; font-size:10px; background:#fff; border-radius:50%; width:14px; height:14px; line-height:14px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.6);">❌</div>`;
                             }
                         }
                         
-                        // 結合原有的圓圈樣式與剛計算出來的標記
                         cellContent = `<div style="position:relative; background-color: ${color}; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; margin: 0 auto; box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.5); text-shadow: 1px 1px 1px rgba(0,0,0,0.5);">${text}${badgeHtml}</div>`;
                     }
                     html += `<td>${cellContent}</td>`;
@@ -747,7 +802,7 @@
             recommendUI.classList.remove('ai-thinking');
             
             if (data.status === 'success') {
-                recommendUI.innerHTML = data.recommendation; // 改用 innerHTML 以支援換行排版
+                recommendUI.innerHTML = data.recommendation; 
                 document.getElementById('bet-amount').innerText = `$${state.currentBetAmount}`;
                 if (data.action === 'B') {
                     recommendUI.style.color = 'var(--red-color)'; recommendUI.style.textShadow = '0 0 15px rgba(239, 68, 68, 0.6)';
@@ -785,8 +840,14 @@
                         ? `<div style="margin-top:5px; font-size:0.75rem; color:#fbbf24; background:rgba(251,191,36,0.1); padding:2px; border-radius:4px;">${core.patterns.join(', ')}</div>` 
                         : `<div style="margin-top:5px; font-size:0.75rem; color:#475569;">無觸發特徵</div>`;
                     
+                    // 新增：動態熱度徽章 UI
+                    let heatBadgeUI = core.heatText !== "分析中"
+                        ? `<div style="position:absolute; top:-8px; right:-8px; background:${core.isHot ? 'linear-gradient(135deg, #ef4444, #b91c1c)' : '#334155'}; color:white; font-size:0.7rem; padding:2px 6px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.5); font-weight:bold; border: 1px solid rgba(255,255,255,0.2); z-index:10;">${core.isHot ? '🔥' : '🧊'} ${core.heatText}</div>`
+                        : '';
+
                     coresHTML += `
                         <div class="core-card">
+                            ${heatBadgeUI}
                             <div class="core-name">${core.name}</div>
                             <div class="core-rec" style="color: ${recColor};">${recText}</div>
                             <div class="core-conf">信心指數: ${core.confidence}</div>
