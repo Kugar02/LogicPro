@@ -155,7 +155,7 @@
         document.getElementById('startBtn').disabled = true;
         QuantModel.init();
         
-        // 請確保這個 API 網址與你在主程式設定的一致
+        // 🚨 請確保這個 API 網址與你在主程式設定的一致！
         const gasUrl = "https://script.google.com/macros/s/AKfycbwRoL5wgWJeSlnyhba2zUpPWZTqxjVDwEtJNhtNnycw6hppg2FkmCNqxCDm-IFcgH76/exec";
         
         log("🔄 正在連線 Google Drive 數據庫...");
@@ -163,15 +163,20 @@
             let res = await fetch(gasUrl);
             let json = await res.json();
             
-            if(json.status === "success" && json.data.length > 0) {
-                globalData = json.data;
-                log(`✅ 成功載入 ${globalData.length} 靴歷史數據 (約 ${globalData.length * 70} 手牌)`, "success");
+            // 彈性讀取變數名稱 (自動兼容 data, history, 或 records)
+            let records = json.data || json.history || json.records;
+
+            if(json.status === "success" && records && records.length > 0) {
+                globalData = records;
+                log(`✅ 成功載入 ${globalData.length} 靴歷史數據 (約 ${globalData.length * 75} 手牌)`, "success");
                 processDataChunks();
             } else {
-                log("⚠️ 資料庫為空！請先生成大數據。", "error");
+                log("⚠️ 資料庫為空！如果是格式錯誤，系統回傳值為: " + JSON.stringify(json), "warn");
+                document.getElementById('startBtn').disabled = false;
             }
         } catch(e) {
             log("❌ 連線失敗: " + e.message, "error");
+            document.getElementById('startBtn').disabled = false;
         }
     }
 
@@ -341,6 +346,7 @@
         log("👉 回測完成！請直接切換回主程式網頁 (index.html) 並重新整理，AI 即會套用全量化模型！", "warn");
         
         document.getElementById('progressText').innerText = "✅ 深度量化分析完成";
+        document.getElementById('startBtn').disabled = false;
     }
 </script>
 </body>
