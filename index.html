@@ -20,7 +20,6 @@
             --grid-line: #242a38;
             --grid-section-line: #475569;
         }
-
         body {
             background: radial-gradient(circle at top center, #172033 0%, var(--bg-main) 100%);
             color: var(--text-main);
@@ -32,7 +31,6 @@
             gap: 15px;
             min-height: 100vh;
         }
-
         /* 頂部控制與策略面板 */
         .top-container {
             display: flex;
@@ -46,7 +44,6 @@
             border: 1px solid var(--panel-border);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
-
         .strategy-panel {
             display: flex;
             justify-content: center;
@@ -58,7 +55,6 @@
             font-size: 0.95rem;
             color: var(--text-muted);
         }
-        
         .strategy-panel select, .strategy-panel input {
             padding: 6px 12px;
             border-radius: 6px;
@@ -72,7 +68,6 @@
         .strategy-panel select:focus, .strategy-panel input:focus {
             border-color: var(--blue-color);
         }
-
         /* 資金與策略儀表板 */
         .dashboard {
             display: flex;
@@ -80,7 +75,6 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-
         .stat-box {
             display: flex;
             flex-direction: column;
@@ -88,7 +82,6 @@
             flex: 1;
             min-width: 100px;
         }
-
         .stat-label {
             font-size: 0.85rem;
             text-transform: uppercase;
@@ -96,13 +89,11 @@
             color: var(--text-muted);
             margin-bottom: 6px;
         }
-
         .stat-value {
             font-size: 1.5rem;
             font-weight: 800;
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
-
         /* AI 獨立戰情室 */
         .ai-panel {
             display: flex;
@@ -114,7 +105,6 @@
             padding: 15px 20px;
             box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 4px 15px rgba(0,0,0,0.3);
         }
-
         .ai-main-result {
             display: flex;
             justify-content: space-between;
@@ -122,7 +112,6 @@
             border-bottom: 1px solid rgba(255,255,255,0.05);
             padding-bottom: 10px;
         }
-
         .ai-main-title {
             font-size: 1.1rem;
             color: var(--text-muted);
@@ -131,21 +120,18 @@
             align-items: center;
             gap: 8px;
         }
-
         .ai-main-recommendation {
             font-size: 1.8rem;
             font-weight: 900;
             color: var(--gold-color);
             text-shadow: 0 0 15px rgba(251, 191, 36, 0.5);
         }
-
         .ai-cores {
             display: flex;
             gap: 10px;
             justify-content: space-between;
             flex-wrap: wrap;
         }
-
         .core-card {
             background: rgba(0, 0, 0, 0.4);
             border: 1px solid var(--panel-border);
@@ -158,11 +144,9 @@
             flex-direction: column;
             gap: 5px;
         }
-
         .core-name { font-size: 0.85rem; color: var(--text-muted); }
         .core-rec { font-size: 1.3rem; font-weight: bold; }
         .core-conf { font-size: 0.75rem; color: #64748b; }
-
         /* 控制區 */
         .controls {
             display: flex;
@@ -174,7 +158,6 @@
             border-radius: 12px;
             border: 1px solid var(--panel-border);
         }
-
         button {
             padding: 12px 20px;
             font-size: 1.1rem;
@@ -189,16 +172,13 @@
             color: white;
             text-shadow: 0 1px 2px rgba(0,0,0,0.5);
         }
-
         button:hover { transform: translateY(-2px); filter: brightness(1.1); }
         button:active { transform: translateY(1px); }
-
         .btn-banker { background: linear-gradient(135deg, #ef4444, #b91c1c); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4); }
         .btn-player { background: linear-gradient(135deg, #3b82f6, #1d4ed8); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
         .btn-tie { background: linear-gradient(135deg, #10b981, #047857); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); }
         .btn-action { background: linear-gradient(135deg, #475569, #1e293b); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
         .btn-import { background: linear-gradient(135deg, #f59e0b, #d97706); font-size: 0.95rem; padding: 8px 16px; border-radius: 6px;}
-
         /* 五路矩陣 (自適應佈局) */
         .roads-container {
             display: flex;
@@ -210,33 +190,28 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
             height: auto;
         }
-
         .bead-plate {
             width: 30%;
             border-right: 3px solid var(--grid-section-line);
             overflow-x: auto;
             overflow-y: hidden;
         }
-        
         .right-roads {
             width: 70%;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
-        
         .big-road {
             flex: 1;
             border-bottom: 3px solid var(--grid-section-line);
             overflow-x: auto;
             overflow-y: hidden;
         }
-        
         .derived-roads {
             flex: 1;
             display: flex;
         }
-        
         .derived-roads > div {
             flex: 1;
             border-right: 2px solid var(--grid-section-line);
@@ -244,49 +219,47 @@
             overflow-y: hidden;
             background: rgba(0,0,0,0.2);
         }
-        
         .derived-roads > div:last-child {
             border-right: none;
         }
-
         .grid-board {
             border-collapse: collapse;
             table-layout: fixed;
             width: max-content;
             min-width: 100%;
         }
-        
         /* 一般網格 (大路與下三路) */
         .grid-board td {
             border: 1px solid var(--grid-line);
             width: 24px; min-width: 24px; max-width: 24px;
             height: 24px;
-            text-align: center; vertical-align: middle;
-            padding: 0; box-sizing: border-box;
+            text-align: center;
+            vertical-align: middle;
+            padding: 0;
+            box-sizing: border-box;
         }
-
         /* 珠盤路格線比例 */
         .bead-plate-board td {
             width: 48px; min-width: 48px; max-width: 48px;
-            height: 48px; 
+            height: 48px;
         }
-
         /* 隱藏捲軸美化 */
         ::-webkit-scrollbar { height: 8px; }
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-top: 1px solid var(--grid-line); }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
-        
         @keyframes pulse {
             0% { transform: scale(1); opacity: 1; }
             50% { transform: scale(1.02); opacity: 0.8; }
             100% { transform: scale(1); opacity: 1; }
         }
-        .ai-thinking { animation: pulse 1s infinite; color: var(--text-muted) !important; }
+        .ai-thinking {
+            animation: pulse 1s infinite;
+            color: var(--text-muted) !important;
+        }
     </style>
 </head>
 <body>
-
     <!-- 頂部控制與儀表板 -->
     <div class="top-container">
         <!-- 策略設定區 -->
@@ -301,7 +274,6 @@
                 </select>
             </label>
         </div>
-
         <div class="strategy-panel" style="margin-top: -5px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-bottom: 0; border-bottom: none;">
             <label style="display:flex; align-items:center; gap:10px;">快速匯入已開牌局: 
                 <input type="text" id="batch-input" placeholder="例: BPBTPP 或 莊閒莊和閒" style="width: 250px;">
@@ -369,27 +341,20 @@
     <script>
         // 建立歷史快照陣列，用於完美撤銷狀態
         const state = {
-            records: [],
-            history: [], 
-            netProfit: 0,
-            win: 0,
-            loss: 0,
-            lastAiAction: 'NONE',  
-            currentBetAmount: 0,   
-            consecutiveLosses: 0,
-            fibIndex: 0
+            records: [], history: [], netProfit: 0, win: 0, loss: 0,
+            lastAiAction: 'NONE', currentBetAmount: 0, consecutiveLosses: 0, fibIndex: 0
         };
-
         const fibSequence = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610];
 
         // ==========================================
-        // 🧠 Quantum Engine (含大路和局支援)
+        // 🧠 Quantum Engine (修復探路與權重對沖版本)
         // ==========================================
         const QuantumEngine = {
             THEORETICAL_B: 50.68,
             THEORETICAL_P: 49.32,
-            weightsConfig: { dragon: 15, jump: 15, aligned: 15, doubleJump: 15, oneTwo: 15, shortRoad: 15, streakRule: 15 },
-
+            weightsConfig: {
+                dragon: 15, jump: 15, aligned: 15, doubleJump: 15, oneTwo: 15, shortRoad: 15, streakRule: 15
+            },
             init: function() {
                 const savedWeights = localStorage.getItem('quantum_ai_weights');
                 if (savedWeights) {
@@ -405,17 +370,14 @@
                     } catch(e) {}
                 }
             },
-
             buildBigRoadMatrix: function(rawSeq) {
                 let matrix = [];
                 let currentCol = -1;
                 let lastResult = null;
                 let tieCount = 0;
-
                 for (let res of rawSeq) {
                     if (res === 'T') {
-                        if (currentCol === -1) { tieCount++; } 
-                        else { matrix[currentCol][matrix[currentCol].length - 1].ties++; }
+                        if (currentCol === -1) { tieCount++; } else { matrix[currentCol][matrix[currentCol].length - 1].ties++; }
                     } else if (res === 'B' || res === 'P') {
                         if (res !== lastResult) { currentCol++; matrix[currentCol] = []; }
                         matrix[currentCol].push({ outcome: res, ties: tieCount });
@@ -425,13 +387,123 @@
                 }
                 return matrix;
             },
+            buildMatrix: function(seq) {
+                let matrix = [];
+                let currentCol = -1;
+                let lastResult = null;
+                for (let res of seq) {
+                    if (res !== lastResult) { currentCol++; matrix[currentCol] = []; }
+                    matrix[currentCol].push(res);
+                    lastResult = res;
+                }
+                return matrix;
+            },
+            // 修正：產生 Red 和 Blue，而非與 Banker 衝突的 B
+            deriveSequence: function(matrix, offset) {
+                let seq = [];
+                for (let col = 0; col < matrix.length; col++) {
+                    let rowLen = matrix[col].length;
+                    for (let row = 0; row < rowLen; row++) {
+                        if (col < offset) continue;
+                        if (col === offset && row === 0) continue;
+                        if (row === 0) {
+                            seq.push(matrix[col - 1].length === matrix[col - 1 - offset].length ? 'Red' : 'Blue');
+                        } else {
+                            let compLen = matrix[col - offset] ? matrix[col - offset].length : 0;
+                            if (row < compLen) seq.push('Red');
+                            else if (row === compLen) seq.push('Blue');
+                            else seq.push('Red');
+                        }
+                    }
+                }
+                return seq;
+            },
+            // 新增：模擬下一口真正的探路顏色
+            simulateNext: function(records, nextAction, offset) {
+                let testRecords = [...records, nextAction];
+                let testBigRoad = this.buildMatrix(testRecords);
+                let testDerived = this.deriveSequence(testBigRoad, offset);
+                if(testDerived.length === 0) return null;
+                return testDerived[testDerived.length - 1]; // 預期會畫出 'Red' 或 'Blue'
+            },
+            detectPatterns: function(name, matrix, isDerived) {
+                let weight = { B: 0, P: 0, Red: 0, Blue: 0 };
+                let conf = 0;
+                let matchedPatterns = [];
+                let colCount = matrix.length;
+                let w = this.weightsConfig;
+                if (colCount >= 2) {
+                    let curLen = matrix[colCount - 1].length;
+                    let prevLen = matrix[colCount - 2].length;
+                    let outcome = matrix[colCount - 1][0]; // 'B', 'P', 'Red', 'Blue'
+                    
+                    let opposite = '';
+                    if (isDerived) {
+                        opposite = outcome === 'Red' ? 'Blue' : 'Red';
+                    } else {
+                        opposite = outcome === 'B' ? 'P' : 'B';
+                    }
 
+                    if (curLen === prevLen && curLen >= 2) {
+                        conf += 20;
+                        weight[opposite] += w.aligned;
+                        matchedPatterns.push("齊頭");
+                    }
+                    if (curLen >= 4) {
+                        conf += 25;
+                        weight[outcome] += w.dragon;
+                        matchedPatterns.push("長龍");
+                    }
+                    if (colCount >= 4 && curLen === 1 && prevLen === 1 && matrix[colCount - 3].length === 1) {
+                        conf += 15;
+                        weight[opposite] += w.jump;
+                        matchedPatterns.push("單跳");
+                    }
+                    if (colCount >= 4 && curLen === 2 && prevLen === 2 && matrix[colCount - 3].length === 2) {
+                        conf += 20;
+                        weight[opposite] += w.doubleJump;
+                        matchedPatterns.push("雙跳");
+                    }
+                    if (colCount >= 4 && curLen === 2 && prevLen === 1 && matrix[colCount - 3].length === 2 && matrix[colCount - 4].length === 1) {
+                        conf += 20;
+                        weight[opposite] += w.oneTwo;
+                        matchedPatterns.push("一房兩廳");
+                    }
+                    if (colCount >= 5) {
+                        let isShort = true;
+                        for(let i=1; i<=5; i++) {
+                            if (matrix[colCount - i].length > 2) isShort = false;
+                        }
+                        if (isShort && curLen === 2) {
+                            conf += 15;
+                            weight[opposite] += w.shortRoad;
+                            matchedPatterns.push("短路");
+                        }
+                    }
+                    if (colCount >= 5 && curLen === 1) {
+                        let streakCount = 0;
+                        let totalOcc = 0;
+                        for(let i=0; i<colCount-1; i++) {
+                            if (matrix[i][0] === outcome) {
+                                totalOcc++;
+                                if (matrix[i].length > 1) streakCount++;
+                            }
+                        }
+                        if (totalOcc >= 3 && (streakCount / totalOcc) > 0.8) {
+                            conf += 20;
+                            weight[outcome] += w.streakRule;
+                            matchedPatterns.push(`逢${(outcome === 'B' || outcome === 'Red') ? '莊/紅' : '閒/藍'}連`);
+                        }
+                    }
+                }
+                return { name: name, weight: weight, confidence: conf, matrix: matrix, patterns: matchedPatterns };
+            },
             analyze: function(rawRecords) {
                 const records = rawRecords.filter(r => r === 'B' || r === 'P');
                 const total = records.length;
                 const bCount = records.filter(r => r === 'B').length;
                 const pCount = records.filter(r => r === 'P').length;
-                
+
                 const smoothing = Math.min(total / 30, 0.8);
                 const dynamicB = total > 0 ? (this.THEORETICAL_B * (1 - smoothing)) + ((bCount / total * 100) * smoothing) : this.THEORETICAL_B;
                 const dynamicP = total > 0 ? (this.THEORETICAL_P * (1 - smoothing)) + ((pCount / total * 100) * smoothing) : this.THEORETICAL_P;
@@ -439,12 +511,13 @@
 
                 const bigRoadMatrixWithTies = this.buildBigRoadMatrix(rawRecords);
                 const bigRoadMatrix = this.buildMatrix(records);
+                
                 const matBigEye = this.buildMatrix(this.deriveSequence(bigRoadMatrix, 1));
                 const matSmall = this.buildMatrix(this.deriveSequence(bigRoadMatrix, 2));
                 const matRoach = this.buildMatrix(this.deriveSequence(bigRoadMatrix, 3));
 
                 const bigRoad = this.detectPatterns('大路', bigRoadMatrix, false);
-                bigRoad.matrix = bigRoadMatrixWithTies; 
+                bigRoad.matrix = bigRoadMatrixWithTies;
                 const bigEyeBoy = this.detectPatterns('大眼仔', matBigEye, true);
                 const smallRoad = this.detectPatterns('小路', matSmall, true);
                 const roachRoad = this.detectPatterns('曱甴路', matRoach, true);
@@ -455,101 +528,66 @@
                     return { status: "waiting", recommendation: "等待數據累積...", action: "NONE", bet_amount: 0, cores_analysis: cores_analysis };
                 }
 
-                const askRoad = this.simulateNextAskRoad(bigRoadMatrix);
+                // 真正的探路映射：如果下一把出莊/閒，下三路會畫什麼顏色
+                let simB_BigEye = this.simulateNext(records, 'B', 1);
+                let simB_Small = this.simulateNext(records, 'B', 2);
+                let simB_Roach = this.simulateNext(records, 'B', 3);
 
-                let totalB = baseWeight.B + askRoad.weight.B + bigRoad.weight.B + bigEyeBoy.weight.B + smallRoad.weight.B + roachRoad.weight.B;
-                let totalP = baseWeight.P + askRoad.weight.P + bigRoad.weight.P + bigEyeBoy.weight.P + smallRoad.weight.P + roachRoad.weight.P;
-                let totalConf = askRoad.confidence + bigRoad.confidence + bigEyeBoy.confidence + smallRoad.confidence + roachRoad.confidence;
+                let simP_BigEye = this.simulateNext(records, 'P', 1);
+                let simP_Small = this.simulateNext(records, 'P', 2);
+                let simP_Roach = this.simulateNext(records, 'P', 3);
+
+                // 權重轉換器
+                let getMappedWeight = (derivedRoad, simBColor, simPColor) => {
+                    let weightForB = derivedRoad.weight[simBColor] || 0;
+                    let weightForP = derivedRoad.weight[simPColor] || 0;
+                    return { B: weightForB, P: weightForP };
+                };
+
+                let beWeight = getMappedWeight(bigEyeBoy, simB_BigEye, simP_BigEye);
+                let smWeight = getMappedWeight(smallRoad, simB_Small, simP_Small);
+                let roWeight = getMappedWeight(roachRoad, simB_Roach, simP_Roach);
+
+                let totalB = baseWeight.B + bigRoad.weight.B + beWeight.B + smWeight.B + roWeight.B;
+                let totalP = baseWeight.P + bigRoad.weight.P + beWeight.P + smWeight.P + roWeight.P;
+                let totalConf = bigRoad.confidence + bigEyeBoy.confidence + smallRoad.confidence + roachRoad.confidence;
 
                 const diff = Math.abs(totalB - totalP);
-                const confThreshold = 45; 
+                const confThreshold = 40; // 降低觸發門檻，但要求對沖差值大
+                const diffThreshold = 15; // 必須有 15 分以上的優勢差才下注
 
                 let action = "NONE";
                 let recommendation = "觀望 (防禦機制觸發)";
 
-                if (diff > 10 && totalConf >= confThreshold) {
-                    if (totalB > totalP) { action = "B"; recommendation = "正打 莊 (B)"; } 
-                    else { action = "P"; recommendation = "正打 閒 (P)"; }
-                } else if (diff <= 10) { recommendation = "鎖死觀望 (路單衝突)"; } 
-                else if (totalConf < confThreshold) { recommendation = "鎖死觀望 (無明顯特徵)"; }
+                if (diff > diffThreshold && totalConf >= confThreshold) {
+                    if (totalB > totalP) {
+                        action = "B";
+                        recommendation = "正打 莊 (B)";
+                    } else {
+                        action = "P";
+                        recommendation = "正打 閒 (P)";
+                    }
+                } else if (diff <= diffThreshold && totalConf >= confThreshold) {
+                    recommendation = "鎖死觀望 (路單衝突/無優勢)";
+                } else {
+                    recommendation = "鎖死觀望 (無明顯特徵)";
+                }
 
                 return { status: "success", action: action, recommendation: recommendation, cores_analysis: cores_analysis };
-            },
-
-            buildMatrix: function(seq) {
-                let matrix = []; let currentCol = -1; let lastResult = null;
-                for (let res of seq) {
-                    if (res !== lastResult) { currentCol++; matrix[currentCol] = []; }
-                    matrix[currentCol].push(res); lastResult = res;
-                }
-                return matrix;
-            },
-
-            deriveSequence: function(matrix, offset) {
-                let seq = [];
-                for (let col = 0; col < matrix.length; col++) {
-                    let rowLen = matrix[col].length;
-                    for (let row = 0; row < rowLen; row++) {
-                        if (col < offset) continue;
-                        if (col === offset && row === 0) continue;
-                        if (row === 0) { seq.push(matrix[col - 1].length === matrix[col - 1 - offset].length ? 'R' : 'B'); } 
-                        else {
-                            let compLen = matrix[col - offset] ? matrix[col - offset].length : 0;
-                            if (row < compLen) seq.push('R');
-                            else if (row === compLen) seq.push('B');
-                            else seq.push('R');
-                        }
-                    }
-                }
-                return seq;
-            },
-
-            detectPatterns: function(name, matrix, isDerived) {
-                let weight = { B: 0, P: 0 }; let conf = 0; let matchedPatterns = []; let colCount = matrix.length; let w = this.weightsConfig;
-                if (colCount >= 2) {
-                    let curLen = matrix[colCount - 1].length; let prevLen = matrix[colCount - 2].length;
-                    let outcome = matrix[colCount - 1][0];
-                    let opposite = (outcome === 'B' || outcome === 'R') ? (isDerived ? 'B' : 'P') : (isDerived ? 'R' : 'B');
-                    
-                    if (curLen === prevLen && curLen >= 2) { conf += 20; if (!isDerived) weight[opposite] += w.aligned; matchedPatterns.push("齊頭"); }
-                    if (curLen >= 4) { conf += 25; if (!isDerived) weight[outcome] += w.dragon; matchedPatterns.push("長龍"); }
-                    if (colCount >= 4 && curLen === 1 && prevLen === 1 && matrix[colCount - 3].length === 1) { conf += 15; if (!isDerived) weight[opposite] += w.jump; matchedPatterns.push("單跳"); }
-                    if (colCount >= 4 && curLen === 2 && prevLen === 2 && matrix[colCount - 3].length === 2) { conf += 20; if (!isDerived) weight[opposite] += w.doubleJump; matchedPatterns.push("雙跳"); }
-                    if (colCount >= 4 && curLen === 2 && prevLen === 1 && matrix[colCount - 3].length === 2 && matrix[colCount - 4].length === 1) { conf += 20; if (!isDerived) weight[opposite] += w.oneTwo; matchedPatterns.push("一房兩廳"); }
-                    if (colCount >= 5) {
-                        let isShort = true; for(let i=1; i<=5; i++) { if (matrix[colCount - i].length > 2) isShort = false; }
-                        if (isShort && curLen === 2) { conf += 15; if (!isDerived) weight[opposite] += w.shortRoad; matchedPatterns.push("短路"); }
-                    }
-                    if (colCount >= 5 && curLen === 1) {
-                        let streakCount = 0; let totalOcc = 0;
-                        for(let i=0; i<colCount-1; i++) { if (matrix[i][0] === outcome) { totalOcc++; if (matrix[i].length > 1) streakCount++; } }
-                        if (totalOcc >= 3 && (streakCount / totalOcc) > 0.8) { conf += 20; if (!isDerived) weight[outcome] += w.streakRule; matchedPatterns.push(`逢${outcome === 'B' || outcome === 'R' ? '紅' : '藍'}連`); }
-                    }
-                }
-                return { name: name, weight: weight, confidence: conf, matrix: matrix, patterns: matchedPatterns };
-            },
-
-            simulateNextAskRoad: function(matrix) {
-                let weight = { B: 0, P: 0 }; let conf = 0; let colCount = matrix.length;
-                if (colCount > 2) {
-                    let lastLen = matrix[colCount - 1].length; let prevLen = matrix[colCount - 2].length;
-                    let lastOutcome = matrix[colCount - 1][0]; let opposite = lastOutcome === 'B' ? 'P' : 'B';
-                    if (lastLen === prevLen) { weight[opposite] += 30; conf += 25; } else if (lastLen < prevLen) { weight[lastOutcome] += 20; conf += 15; }
-                }
-                return { weight: weight, confidence: conf };
             }
         };
 
         // ==========================================
         // 🎨 前端 UI 與操作邏輯
         // ==========================================
-
         window.onload = function() {
-            updateBankrollUI(); 
+            updateBankrollUI();
             QuantumEngine.init();
             renderAllEmpty();
-            // 加入畫面縮放監聽，確保自適應精準
-            window.addEventListener('resize', () => { if(state.records.length > 0) analyzeWithJS(); else renderAllEmpty(); });
+            window.addEventListener('resize', () => {
+                if(state.records.length > 0) analyzeWithJS();
+                else renderAllEmpty();
+            });
         };
 
         function renderAllEmpty() {
@@ -562,18 +600,13 @@
 
         function addRecord(result) {
             state.history.push({
-                win: state.win,
-                loss: state.loss,
-                netProfit: state.netProfit,
-                consecutiveLosses: state.consecutiveLosses,
-                fibIndex: state.fibIndex,
-                lastAiAction: state.lastAiAction,
-                currentBetAmount: state.currentBetAmount
+                win: state.win, loss: state.loss, netProfit: state.netProfit,
+                consecutiveLosses: state.consecutiveLosses, fibIndex: state.fibIndex,
+                lastAiAction: state.lastAiAction, currentBetAmount: state.currentBetAmount
             });
-
             if (state.lastAiAction !== 'NONE' && state.currentBetAmount > 0) {
-                if (result === 'T') { } 
-                else if (result === state.lastAiAction) {
+                if (result === 'T') {
+                } else if (result === state.lastAiAction) {
                     state.win++; state.netProfit += state.currentBetAmount;
                     state.consecutiveLosses = 0; state.fibIndex = Math.max(0, state.fibIndex - 2);
                 } else {
@@ -584,7 +617,7 @@
             updateBankrollUI();
             state.records.push(result);
             renderBeadPlate();
-            analyzeWithJS(); 
+            analyzeWithJS();
         }
 
         function importBatchData() {
@@ -598,15 +631,10 @@
                 else if (c === 'T' || c === '和') newRecords.push('T');
             }
             if (newRecords.length === 0) { alert("未偵測到有效的牌局數據"); return; }
-
             state.records = newRecords;
-            state.history = []; 
-            state.netProfit = 0; state.win = 0; state.loss = 0; state.lastAiAction = 'NONE';
-            state.currentBetAmount = 0; state.consecutiveLosses = 0; state.fibIndex = 0;
-
-            updateBankrollUI();
-            renderBeadPlate();
-            analyzeWithJS();
+            state.history = []; state.netProfit = 0; state.win = 0; state.loss = 0;
+            state.lastAiAction = 'NONE'; state.currentBetAmount = 0; state.consecutiveLosses = 0; state.fibIndex = 0;
+            updateBankrollUI(); renderBeadPlate(); analyzeWithJS();
             inputElement.value = '';
         }
 
@@ -615,17 +643,11 @@
                 state.records.pop();
                 let prevState = state.history.pop();
                 if (prevState) {
-                    state.win = prevState.win;
-                    state.loss = prevState.loss;
-                    state.netProfit = prevState.netProfit;
-                    state.consecutiveLosses = prevState.consecutiveLosses;
-                    state.fibIndex = prevState.fibIndex;
-                    state.lastAiAction = prevState.lastAiAction;
-                    state.currentBetAmount = prevState.currentBetAmount;
+                    state.win = prevState.win; state.loss = prevState.loss; state.netProfit = prevState.netProfit;
+                    state.consecutiveLosses = prevState.consecutiveLosses; state.fibIndex = prevState.fibIndex;
+                    state.lastAiAction = prevState.lastAiAction; state.currentBetAmount = prevState.currentBetAmount;
                 }
-                updateBankrollUI();
-                renderBeadPlate();
-                analyzeWithJS(); 
+                updateBankrollUI(); renderBeadPlate(); analyzeWithJS();
             }
         }
 
@@ -634,25 +656,24 @@
             const currentBalance = initialBankroll + state.netProfit;
             const balanceUI = document.getElementById('current-balance');
             balanceUI.innerText = `$${currentBalance}`;
-            
             const profitUI = document.getElementById('total-profit');
             profitUI.innerText = state.netProfit >= 0 ? `+$${state.netProfit}` : `-$${Math.abs(state.netProfit)}`;
-            if (state.netProfit > 0) { profitUI.style.color = 'var(--green-color)'; profitUI.style.textShadow = '0 0 15px rgba(16, 185, 129, 0.5)'; } 
-            else if (state.netProfit < 0) { profitUI.style.color = 'var(--red-color)'; profitUI.style.textShadow = '0 0 15px rgba(239, 68, 68, 0.5)'; } 
-            else { profitUI.style.color = 'var(--text-main)'; profitUI.style.textShadow = 'none'; }
-
+            if (state.netProfit > 0) {
+                profitUI.style.color = 'var(--green-color)'; profitUI.style.textShadow = '0 0 15px rgba(16, 185, 129, 0.5)';
+            } else if (state.netProfit < 0) {
+                profitUI.style.color = 'var(--red-color)'; profitUI.style.textShadow = '0 0 15px rgba(239, 68, 68, 0.5)';
+            } else {
+                profitUI.style.color = 'var(--text-main)'; profitUI.style.textShadow = 'none';
+            }
             const totalPlays = state.win + state.loss;
             const winRate = totalPlays > 0 ? Math.round((state.win / totalPlays) * 100) : 0;
             document.getElementById('win-rate').innerText = `${state.win}勝 ${state.loss}負 (${winRate}%)`;
         }
 
-        // 👑 修正: 珠盤路動態偵測容器寬度
         function renderBeadPlate() {
             const maxRows = 6;
             const container = document.getElementById('bead-plate-container');
-            // 動態計算當前畫面下，剛好填滿且不需要捲動的列數 (每格 48px)
             let baseCols = Math.max(6, Math.floor((container.clientWidth - 5) / 48));
-
             let totalCols = Math.ceil(state.records.length / maxRows);
             if (totalCols < baseCols) totalCols = baseCols;
 
@@ -682,44 +703,64 @@
             recommendUI.classList.add('ai-thinking');
             
             const data = QuantumEngine.analyze(state.records);
+            
             const baseBet = parseInt(document.getElementById('base-bet').value) || 1000;
             const strategy = document.getElementById('bet-strategy').value;
-            
             state.lastAiAction = data.action || 'NONE';
-
-            if (state.lastAiAction === 'NONE') { state.currentBetAmount = 0; } 
-            else {
-                if (strategy === 'martingale') { state.currentBetAmount = baseBet * Math.pow(2, state.consecutiveLosses); } 
-                else if (strategy === 'fibonacci') { state.currentBetAmount = baseBet * fibSequence[state.fibIndex]; } 
-                else { state.currentBetAmount = baseBet; }
+            
+            if (state.lastAiAction === 'NONE') {
+                state.currentBetAmount = 0;
+            } else {
+                if (strategy === 'martingale') {
+                    state.currentBetAmount = baseBet * Math.pow(2, state.consecutiveLosses);
+                } else if (strategy === 'fibonacci') {
+                    state.currentBetAmount = baseBet * fibSequence[state.fibIndex];
+                } else {
+                    state.currentBetAmount = baseBet;
+                }
             }
 
             recommendUI.classList.remove('ai-thinking');
-
+            
             if (data.status === 'success') {
                 recommendUI.innerText = data.recommendation;
                 document.getElementById('bet-amount').innerText = `$${state.currentBetAmount}`;
-                if (data.action === 'B') { recommendUI.style.color = 'var(--red-color)'; recommendUI.style.textShadow = '0 0 15px rgba(239, 68, 68, 0.6)'; } 
-                else if (data.action === 'P') { recommendUI.style.color = 'var(--blue-color)'; recommendUI.style.textShadow = '0 0 15px rgba(59, 130, 246, 0.6)'; } 
-                else { recommendUI.style.color = 'var(--gold-color)'; recommendUI.style.textShadow = '0 0 15px rgba(251, 191, 36, 0.4)'; }
+                if (data.action === 'B') {
+                    recommendUI.style.color = 'var(--red-color)'; recommendUI.style.textShadow = '0 0 15px rgba(239, 68, 68, 0.6)';
+                } else if (data.action === 'P') {
+                    recommendUI.style.color = 'var(--blue-color)'; recommendUI.style.textShadow = '0 0 15px rgba(59, 130, 246, 0.6)';
+                } else {
+                    recommendUI.style.color = 'var(--gold-color)'; recommendUI.style.textShadow = '0 0 15px rgba(251, 191, 36, 0.4)';
+                }
             } else {
                 recommendUI.innerText = data.recommendation;
-                recommendUI.style.color = 'var(--gold-color)';
-                recommendUI.style.textShadow = 'none';
+                recommendUI.style.color = 'var(--gold-color)'; recommendUI.style.textShadow = 'none';
                 document.getElementById('bet-amount').innerText = "$0";
             }
 
             if (data.cores_analysis) {
                 let coresHTML = '';
                 data.cores_analysis.forEach(core => {
-                    let recText = '無明顯方向'; let recColor = '#64748b';
-                    if (core.weight.B > core.weight.P) { recText = '傾向 莊/紅'; recColor = 'var(--red-color)'; }
-                    else if (core.weight.P > core.weight.B) { recText = '傾向 閒/藍'; recColor = 'var(--blue-color)'; }
+                    let recText = '無明顯方向';
+                    let recColor = '#64748b';
                     
+                    let wB = core.weight.B || 0;
+                    let wP = core.weight.P || 0;
+                    let wRed = core.weight.Red || 0;
+                    let wBlue = core.weight.Blue || 0;
+
+                    if (wB > wP || wRed > wBlue) {
+                        recText = (wB > 0) ? '傾向 莊' : '傾向 紅';
+                        recColor = 'var(--red-color)';
+                    } else if (wP > wB || wBlue > wRed) {
+                        recText = (wP > 0) ? '傾向 閒' : '傾向 藍';
+                        recColor = 'var(--blue-color)';
+                    }
+
                     let patternBadge = core.patterns.length > 0 
                         ? `<div style="margin-top:5px; font-size:0.75rem; color:#fbbf24; background:rgba(251,191,36,0.1); padding:2px; border-radius:4px;">${core.patterns.join(', ')}</div>` 
                         : `<div style="margin-top:5px; font-size:0.75rem; color:#475569;">無觸發特徵</div>`;
-
+                    
                     coresHTML += `
                         <div class="core-card">
                             <div class="core-name">${core.name}</div>
@@ -731,12 +772,11 @@
                 });
                 coresContainer.innerHTML = coresHTML;
 
-                // 移除硬編碼的列數，交由動態寬度計算
                 renderRoadGrid(data.cores_analysis[0].matrix, 'big-road-container', 'big-road');
                 renderRoadGrid(data.cores_analysis[1].matrix, 'big-eye-container', 'big-eye');
                 renderRoadGrid(data.cores_analysis[2].matrix, 'small-road-container', 'small');
                 renderRoadGrid(data.cores_analysis[3].matrix, 'roach-road-container', 'roach');
-            
+
                 setTimeout(() => {
                     document.querySelectorAll('.bead-plate, .big-road, .derived-roads > div').forEach(el => {
                         el.scrollTo({ left: el.scrollWidth, behavior: 'smooth' });
@@ -745,40 +785,34 @@
             }
         }
 
-        // 👑 修正: 讀取容器動態寬度，實現只有超過視窗時才出現捲軸
         function renderRoadGrid(matrix, containerId, styleType) {
             const maxRows = 6;
             const container = document.getElementById(containerId);
-            
-            // 動態精準計算可以容納的基礎列數 (扣除邊框誤差，每格 24px)
             let baseCols = Math.max(8, Math.floor((container.clientWidth - 5) / 24));
-
-            let logicalGrid = {}; 
+            
+            let logicalGrid = {};
             let currentVisualCol = 0;
-            let maxCol = baseCols - 1; 
+            let maxCol = baseCols - 1;
 
             for (let col = 0; col < matrix.length; col++) {
                 let run = matrix[col];
-                let outcomeObj = run[0]; 
                 let r = 0;
                 let c = currentVisualCol;
-
                 for (let i = 0; i < run.length; i++) {
                     if (i === 0) {
                         r = 0; c = currentVisualCol;
                         while (logicalGrid[`0,${c}`]) { c++; }
                         currentVisualCol = c;
                     } else {
-                        if (r + 1 < maxRows && !logicalGrid[`${r + 1},${c}`]) { r++; } 
-                        else { c++; }
+                        if (r + 1 < maxRows && !logicalGrid[`${r + 1},${c}`]) { r++; } else { c++; }
                     }
-                    logicalGrid[`${r},${c}`] = run[i]; 
+                    logicalGrid[`${r},${c}`] = run[i];
                     if (c > maxCol) maxCol = c;
                 }
                 currentVisualCol++;
             }
 
-            let totalCols = maxCol + 1; 
+            let totalCols = maxCol + 1;
             if (totalCols < baseCols) totalCols = baseCols;
 
             let html = '<table class="grid-board">';
@@ -787,20 +821,18 @@
                 for (let c = 0; c < totalCols; c++) {
                     let cellContent = '';
                     let cellData = logicalGrid[`${r},${c}`];
-                    
                     if (cellData) {
                         let outcome = typeof cellData === 'string' ? cellData : cellData.outcome;
                         let ties = typeof cellData === 'string' ? 0 : cellData.ties;
                         
+                        // 修復：正確判斷 Red 與 Blue
                         let color = (styleType === 'big-road') 
-                                    ? (outcome === 'B' ? 'var(--red-color)' : 'var(--blue-color)')
-                                    : (outcome === 'R' ? 'var(--red-color)' : 'var(--blue-color)');
+                            ? (outcome === 'B' ? 'var(--red-color)' : 'var(--blue-color)') 
+                            : (outcome === 'Red' ? 'var(--red-color)' : 'var(--blue-color)');
 
                         if (styleType === 'big-road') {
                             let tieLine = ties > 0 ? `<div style="position:absolute; top:50%; left: -2px; right: -2px; height: 3px; background-color: var(--green-color); transform: translateY(-50%) rotate(-45deg);"></div>` : '';
-                            if (ties > 1) {
-                                tieLine += `<div style="position:absolute; top:-8px; left:12px; font-size:11px; font-weight:900; color:var(--green-color); z-index:10; text-shadow: 0 0 2px black;">${ties}</div>`;
-                            }
+                            if (ties > 1) { tieLine += `<div style="position:absolute; top:-8px; left:12px; font-size:11px; font-weight:900; color:var(--green-color); z-index:10; text-shadow: 0 0 2px black;">${ties}</div>`; }
                             cellContent = `<div style="position:relative; border: 2px solid ${color}; width: 14px; height: 14px; border-radius: 50%; margin: 0 auto; box-shadow: inset 0 0 3px ${color}, 0 0 3px ${color};">${tieLine}</div>`;
                         } else if (styleType === 'big-eye') {
                             cellContent = `<div style="border: 2px solid ${color}; width: 8px; height: 8px; border-radius: 50%; margin: 0 auto; box-shadow: 0 0 2px ${color};"></div>`;
@@ -822,19 +854,22 @@
             if (state.records.length === 0) return;
             const recommendUI = document.getElementById('ai-recommend');
             recommendUI.innerText = "⏳ 同步至 Google Drive...";
-            recommendUI.style.color = "#fff"; recommendUI.style.textShadow = 'none';
+            recommendUI.style.color = "#fff";
+            recommendUI.style.textShadow = 'none';
 
             const shoeData = { records: state.records, profit: state.netProfit, status: `AI WinRate: ${document.getElementById('win-rate').innerText}` };
             try {
-                const gasUrl = "https://script.google.com/macros/s/AKfycbwRoL5wgWJeSlnyhba2zUpPWZTqxjVDwEtJNhtNnycw6hppg2FkmCNqxCDm-IFcgH76/exec"; 
+                const gasUrl = "https://script.google.com/macros/s/AKfycbwRoL5wgWJeSlnyhba2zUpPWZTqxjVDwEtJNhtNnycw6hppg2FkmCNqxCDm-IFcgH76/exec";
                 await fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(shoeData) });
-                console.log("數據成功上傳！");
-            } catch (error) { console.error("上傳失敗:", error); }
+            } catch (error) {}
 
-            state.records = []; state.history = []; state.netProfit = 0; state.win = 0; state.loss = 0; state.lastAiAction = 'NONE'; state.currentBetAmount = 0; state.consecutiveLosses = 0; state.fibIndex = 0;
-            
+            state.records = []; state.history = []; state.netProfit = 0; state.win = 0; state.loss = 0;
+            state.lastAiAction = 'NONE'; state.currentBetAmount = 0; state.consecutiveLosses = 0; state.fibIndex = 0;
             updateBankrollUI();
-            recommendUI.innerText = "等待數據累積..."; recommendUI.style.color = "var(--gold-color)"; document.getElementById('bet-amount').innerText = "$0";
+            
+            recommendUI.innerText = "等待數據累積...";
+            recommendUI.style.color = "var(--gold-color)";
+            document.getElementById('bet-amount').innerText = "$0";
             document.getElementById('ai-cores-container').innerHTML = `
                 <div class="core-card"><div class="core-name">大路特徵</div><div class="core-rec" style="color:#64748b;">無</div><div class="core-conf">等待中</div></div>
                 <div class="core-card"><div class="core-name">大眼仔</div><div class="core-rec" style="color:#64748b;">無</div><div class="core-conf">等待中</div></div>
