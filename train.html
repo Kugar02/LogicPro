@@ -108,7 +108,7 @@
                 const data = await response.json();
                 
                 if (data.status !== 'success') { log(`讀取失敗: ${data.message}`); return; }
-                const history = data.history;
+                const history = data.data;
                 if (!history || history.length === 0) { log("警告：目前沒有歷史數據！請先到主程式輸入實戰牌靴。"); return; }
 
                 log(`成功載入 ${history.length} 靴歷史牌局。開始進行【七大特徵】深度回測...`);
