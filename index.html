@@ -268,13 +268,15 @@
         <div class="strategy-panel">
             <label>本金: $<input type="number" id="initial-bankroll" value="10000" style="width: 80px;" onchange="updateBankrollUI()"></label>
             <label>基碼: $<input type="number" id="base-bet" value="1000" style="width: 60px;"></label>
-            <!-- 新增風控設定 -->
             <label>止盈(+$): <input type="number" id="take-profit" value="5000" style="width: 60px;"></label>
             <label>止損(-$): <input type="number" id="stop-loss" value="5000" style="width: 60px;"></label>
             <label>策略: 
                 <select id="bet-strategy">
-                    <option value="flat">平注 (永遠下基碼)</option>
-                    <option value="fibonacci">斐波那契 (退二進一)</option>
+                    <option value="custom_fibo">費式數列關數 (5,13,8,21)</option>
+                    <option value="kelly">凱利下注 (動態本金比例)</option>
+                    <option value="double_dragon">雙頭龍 (消數法 1-2-3)</option>
+                    <option value="tumbler">不倒翁投注 (+1/-1 微調)</option>
+                    <option value="fibonacci">傳統斐波那契 (退二進一)</option>
                     <option value="martingale">馬丁格爾 (輸後翻倍)</option>
                 </select>
             </label>
@@ -327,7 +329,6 @@
         <button class="btn-player" onclick="addRecord('P')">🔵 開閒 (P)</button>
         <button class="btn-tie" onclick="addRecord('T')">🟢 開和 (T)</button>
         <button class="btn-action" onclick="undoRecord()">↩ 撤銷</button>
-        <!-- 實戰下注切換按鈕 -->
         <button class="btn-action" id="btn-analyze" onclick="toggleAnalysis()" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);">🎯 開始實戰下注</button>
         <button class="btn-action" onclick="resetBoard()">🗑️ 結算新靴</button>
     </div>
@@ -350,17 +351,20 @@
         const state = {
             records: [], history: [], netProfit: 0, win: 0, loss: 0,
             lastAiAction: 'NONE', currentBetAmount: 0, consecutiveLosses: 0, fibIndex: 0,
-            isAnalyzing: false, // 判斷目前是否在「實戰下注模式」
-            sessionStartProfit: 0 // 新增：用於記錄每次開始下注時的利潤基準，作為止盈止損的起點
+            isAnalyzing: false, 
+            sessionStartProfit: 0,
+            // 新增策略追蹤狀態
+            labouchere: [1, 2, 3],
+            tumblerLevel: 1,
+            customFiboIdx: 0
         };
         const fibSequence = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610];
+        const customFiboSequence = [5, 13, 8, 21];
 
-        // 切換下注模式
         function toggleAnalysis() {
             state.isAnalyzing = !state.isAnalyzing;
             const btn = document.getElementById('btn-analyze');
             if (state.isAnalyzing) {
-                // 將目前的盈虧設為止盈止損的 0 基準線
                 state.sessionStartProfit = state.netProfit;
                 btn.innerHTML = '🛑 暫停下注 (純觀察)';
                 btn.style.background = 'linear-gradient(135deg, #ef4444, #b91c1c)';
@@ -579,7 +583,7 @@
                 const cores_analysis = [bigRoad, bigEyeBoy, smallRoad, roachRoad];
 
                 if (records.length < 2) {
-                    return { status: "waiting", recommendation: "等待數據累積...", action: "NONE", bet_amount: 0, cores_analysis: cores_analysis };
+                    return { status: "waiting", recommendation: "等待數據累積...", action: "NONE", bet_amount: 0, cores_analysis: cores_analysis, pctB: 50.0, pctP: 50.0 };
                 }
 
                 let simB_BigEye = this.simulateNext(records, 'B', 1);
@@ -653,7 +657,7 @@
                     }
                 }
 
-                return { status: "success", action: action, recommendation: recommendation, cores_analysis: cores_analysis };
+                return { status: "success", action: action, recommendation: recommendation, cores_analysis: cores_analysis, pctB: parseFloat(pctB), pctP: parseFloat(pctP) };
             }
         };
 
@@ -679,47 +683,71 @@
         }
 
         function addRecord(result) {
-            // 保存歷史快照。若未開啟分析模式，強制把注碼記為 0，避免觸發盈虧與✅❌
+            const baseBet = parseInt(document.getElementById('base-bet').value) || 1000;
+
             state.history.push({
                 win: state.win, loss: state.loss, netProfit: state.netProfit,
                 consecutiveLosses: state.consecutiveLosses, fibIndex: state.fibIndex,
                 lastAiAction: state.isAnalyzing ? state.lastAiAction : 'NONE',
-                currentBetAmount: state.isAnalyzing ? state.currentBetAmount : 0
+                currentBetAmount: state.isAnalyzing ? state.currentBetAmount : 0,
+                labouchere: [...state.labouchere],
+                tumblerLevel: state.tumblerLevel,
+                customFiboIdx: state.customFiboIdx
             });
 
-            // 只有在實戰下注模式下，才去對答案計算盈虧
+            // 對答案並結算新策略邏輯
             if (state.isAnalyzing && state.lastAiAction !== 'NONE' && state.currentBetAmount > 0) {
                 if (result === 'T') {
+                    // 和局退回，數列不動
                 } else if (result === state.lastAiAction) {
                     state.win++; state.netProfit += state.currentBetAmount;
                     state.consecutiveLosses = 0; state.fibIndex = Math.max(0, state.fibIndex - 2);
+                    
+                    // 策略: 費式數列關數 (贏即回到第1關)
+                    state.customFiboIdx = 0;
+                    
+                    // 策略: 不倒翁 (贏則加 1 注碼)
+                    state.tumblerLevel++;
+
+                    // 策略: 雙頭龍 (贏則消去首尾)
+                    if (state.labouchere.length >= 2) {
+                        state.labouchere.shift();
+                        state.labouchere.pop();
+                    } else {
+                        state.labouchere = [];
+                    }
+                    if (state.labouchere.length === 0) state.labouchere = [1, 2, 3];
                 } else {
                     state.loss++; state.netProfit -= state.currentBetAmount;
                     state.consecutiveLosses++; state.fibIndex = Math.min(fibSequence.length - 1, state.fibIndex + 1);
+                    
+                    // 策略: 費式數列關數 (輸則進下1關，破4關則重啟)
+                    state.customFiboIdx++;
+                    if (state.customFiboIdx > 3) state.customFiboIdx = 0;
+
+                    // 策略: 不倒翁 (輸則減 1 注碼，最少 1)
+                    state.tumblerLevel = Math.max(1, state.tumblerLevel - 1);
+
+                    // 策略: 雙頭龍 (輸則將本次下注單位疊加到尾端)
+                    let lastUnits = Math.round(state.currentBetAmount / baseBet) || 1;
+                    state.labouchere.push(lastUnits);
                 }
             }
 
             state.records.push(result);
 
-            // ==========================================
-            // 🛡️ 風控機制：計算當前利潤並判定是否觸發止盈/止損
-            // ==========================================
             if (state.isAnalyzing) {
                 const tp = parseInt(document.getElementById('take-profit').value) || 0;
                 const sl = parseInt(document.getElementById('stop-loss').value) || 0;
-                
-                // 計算從這次點擊「開始下注」後的這波段淨利潤
                 const sessionProfit = state.netProfit - state.sessionStartProfit;
 
                 if (tp > 0 && sessionProfit >= tp) {
-                    // 觸發止盈
                     state.isAnalyzing = false;
                     const btn = document.getElementById('btn-analyze');
                     btn.innerHTML = '🏆 觸發止盈 (繼續運行分析)';
                     btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
                     btn.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
                 } else if (sl > 0 && sessionProfit <= -sl) {
-                    // 觸發止損
                     state.isAnalyzing = false;
                     const btn = document.getElementById('btn-analyze');
                     btn.innerHTML = '🛑 觸發止損 (轉為純觀察)';
@@ -745,12 +773,13 @@
             }
             if (newRecords.length === 0) { alert("未偵測到有效的牌局數據"); return; }
             
-            // 完全重置當前狀態
             state.records = []; state.history = []; state.netProfit = 0; state.win = 0; state.loss = 0;
             state.lastAiAction = 'NONE'; state.currentBetAmount = 0; state.consecutiveLosses = 0; state.fibIndex = 0;
             state.sessionStartProfit = 0;
+            state.labouchere = [1, 2, 3];
+            state.tumblerLevel = 1;
+            state.customFiboIdx = 0;
             
-            // 強制切換為純觀察模式
             state.isAnalyzing = false;
             const btn = document.getElementById('btn-analyze');
             if(btn) {
@@ -759,12 +788,12 @@
                 btn.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.4)';
             }
 
-            // 直接將所有輸入資料作為無注碼歷史寫入
             for (let res of newRecords) {
                 state.history.push({
                     win: 0, loss: 0, netProfit: 0,
                     consecutiveLosses: 0, fibIndex: 0,
-                    lastAiAction: 'NONE', currentBetAmount: 0
+                    lastAiAction: 'NONE', currentBetAmount: 0,
+                    labouchere: [1, 2, 3], tumblerLevel: 1, customFiboIdx: 0
                 });
                 state.records.push(res);
             }
@@ -783,6 +812,9 @@
                     state.win = prevState.win; state.loss = prevState.loss; state.netProfit = prevState.netProfit;
                     state.consecutiveLosses = prevState.consecutiveLosses; state.fibIndex = prevState.fibIndex;
                     state.lastAiAction = prevState.lastAiAction; state.currentBetAmount = prevState.currentBetAmount;
+                    state.labouchere = prevState.labouchere || [1, 2, 3];
+                    state.tumblerLevel = prevState.tumblerLevel || 1;
+                    state.customFiboIdx = prevState.customFiboIdx || 0;
                 }
                 updateBankrollUI(); renderBeadPlate(); analyzeWithJS();
             }
@@ -856,17 +888,35 @@
             const strategy = document.getElementById('bet-strategy').value;
             state.lastAiAction = data.action || 'NONE';
             
-            // 判斷是否為觀察模式
-            if (!state.isAnalyzing) {
+            if (!state.isAnalyzing || state.lastAiAction === 'NONE') {
                 state.currentBetAmount = 0;
             } else {
-                if (state.lastAiAction === 'NONE') {
-                    state.currentBetAmount = 0;
-                } else {
-                    if (strategy === 'martingale') {
-                        state.currentBetAmount = baseBet * Math.pow(2, state.consecutiveLosses);
-                    } else if (strategy === 'fibonacci') {
-                        state.currentBetAmount = baseBet * fibSequence[state.fibIndex];
+                // ==========================================
+                // 💰 最新引入的量化注碼策略庫
+                // ==========================================
+                if (strategy === 'martingale') {
+                    state.currentBetAmount = baseBet * Math.pow(2, state.consecutiveLosses);
+                } else if (strategy === 'fibonacci') {
+                    state.currentBetAmount = baseBet * fibSequence[state.fibIndex];
+                } else if (strategy === 'custom_fibo') {
+                    // 費式數列關數 (5,13,8,21)
+                    state.currentBetAmount = baseBet * customFiboSequence[state.customFiboIdx];
+                } else if (strategy === 'tumbler') {
+                    // 不倒翁 (+1/-1)
+                    state.currentBetAmount = baseBet * state.tumblerLevel;
+                } else if (strategy === 'double_dragon') {
+                    // 雙頭龍 / 兩頭消數法
+                    if (state.labouchere.length === 0) state.labouchere = [1, 2, 3];
+                    let units = state.labouchere.length === 1 ? state.labouchere[0] : state.labouchere[0] + state.labouchere[state.labouchere.length - 1];
+                    state.currentBetAmount = baseBet * units;
+                } else if (strategy === 'kelly') {
+                    // 凱利下注 (動態本金比例)
+                    const currentBalance = (parseInt(document.getElementById('initial-bankroll').value) || 0) + state.netProfit;
+                    const p = Math.max(data.pctB || 50, data.pctP || 50) / 100;
+                    const f = 2 * p - 1; // 1:1 賠率下的標準 Kelly 公式
+                    if (f > 0 && currentBalance > 0) {
+                        let amount = Math.floor(currentBalance * f);
+                        state.currentBetAmount = Math.max(baseBet, amount); // 最少仍下一倍基碼以防 AI 死鎖
                     } else {
                         state.currentBetAmount = baseBet;
                     }
@@ -875,7 +925,6 @@
 
             recommendUI.classList.remove('ai-thinking');
             
-            // 視覺化回饋：如果在觀察模式，根據目前觸發的風控狀態顯示對應文字
             let modeWarning = "";
             if (!state.isAnalyzing) {
                 const btnText = document.getElementById('btn-analyze').innerText;
@@ -1036,8 +1085,10 @@
             state.records = []; state.history = []; state.netProfit = 0; state.win = 0; state.loss = 0;
             state.lastAiAction = 'NONE'; state.currentBetAmount = 0; state.consecutiveLosses = 0; state.fibIndex = 0;
             state.sessionStartProfit = 0;
+            state.labouchere = [1, 2, 3];
+            state.tumblerLevel = 1;
+            state.customFiboIdx = 0;
             
-            // 重置時切回預設狀態（關閉實戰分析模式）
             state.isAnalyzing = false;
             const btn = document.getElementById('btn-analyze');
             if(btn) {
