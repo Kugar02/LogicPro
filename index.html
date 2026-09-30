@@ -158,6 +158,7 @@
             padding: 15px;
             border-radius: 12px;
             border: 1px solid var(--panel-border);
+            flex-wrap: wrap;
         }
         button {
             padding: 12px 20px;
@@ -322,8 +323,10 @@
         <button class="btn-banker" onclick="addRecord('B')">🔴 開莊 (B)</button>
         <button class="btn-player" onclick="addRecord('P')">🔵 開閒 (P)</button>
         <button class="btn-tie" onclick="addRecord('T')">🟢 開和 (T)</button>
-        <button class="btn-action" onclick="undoRecord()">↩️ 撤銷上一手</button>
-        <button class="btn-action" onclick="resetBoard()">🗑️ 結算並新靴</button>
+        <button class="btn-action" onclick="undoRecord()">↩️️ 撤銷</button>
+        <!-- 新增：實戰下注切換按鈕 -->
+        <button class="btn-action" id="btn-analyze" onclick="toggleAnalysis()" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);">🎯 開始實戰下注</button>
+        <button class="btn-action" onclick="resetBoard()">🗑️ 結算新靴</button>
     </div>
 
     <!-- 五路矩陣面板 -->
@@ -343,9 +346,26 @@
         // 建立歷史快照陣列，用於完美撤銷狀態
         const state = {
             records: [], history: [], netProfit: 0, win: 0, loss: 0,
-            lastAiAction: 'NONE', currentBetAmount: 0, consecutiveLosses: 0, fibIndex: 0
+            lastAiAction: 'NONE', currentBetAmount: 0, consecutiveLosses: 0, fibIndex: 0,
+            isAnalyzing: false // 新增狀態：判斷目前是否在「實戰下注模式」
         };
         const fibSequence = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610];
+
+        // 切換下注模式
+        function toggleAnalysis() {
+            state.isAnalyzing = !state.isAnalyzing;
+            const btn = document.getElementById('btn-analyze');
+            if (state.isAnalyzing) {
+                btn.innerHTML = '🛑 暫停下注 (純觀察)';
+                btn.style.background = 'linear-gradient(135deg, #ef4444, #b91c1c)';
+                btn.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
+            } else {
+                btn.innerHTML = '🎯 開始實戰下注';
+                btn.style.background = 'linear-gradient(135deg, #8b5cf6, #6d28d9)';
+                btn.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.4)';
+            }
+            analyzeWithJS();
+        }
 
         // ==========================================
         // 🧠 Quantum Engine (整合熱度追蹤與熵值防禦)
@@ -425,7 +445,6 @@
                 if(testDerived.length === 0) return null;
                 return testDerived[testDerived.length - 1]; 
             },
-            // 🔥 動態路單熱度追蹤器：分析路單近期的純度與規律性
             getRoadHeat: function(seq) {
                 if (!seq || seq.length < 6) return { multiplier: 1.0, text: "分析中", isHot: false };
                 let recent = seq.slice(-6); 
@@ -433,21 +452,17 @@
                 for(let i = 1; i < recent.length; i++) {
                     if(recent[i] !== recent[i-1]) jumps++;
                 }
-                // 計算跳變機率。6個元素最多5次跳變。
-                // 若 jump=0(純長龍) 或 jump=5(完美單跳)，則代表規律性極高 (Heat=1.0)
-                // 若 jump=2或3，代表路單破裂無規律 (Heat=0.0)
                 let p_jump = jumps / 5; 
-                let heat = Math.abs(p_jump - 0.5) * 2; // 正規化至 0.0 ~ 1.0
+                let heat = Math.abs(p_jump - 0.5) * 2; 
                 
-                let multiplier = 0.5 + heat; // 動態權重加成：0.5倍(削弱) ~ 1.5倍(增強)
+                let multiplier = 0.5 + heat; 
                 let winRate = Math.round(50 + (heat * 50)); 
                 return { multiplier: multiplier, text: winRate + "%", isHot: winRate >= 80 };
             },
-            // 🌪️ 盤路熵值計算：判斷當前是否為高風險「爛路」
             getEntropy: function(records) {
                 if (records.length < 12) return 0;
                 let recent = records.slice(-12);
-                let tt = 0, tf = 0; // tt: 延續(連), tf: 反轉(跳)
+                let tt = 0, tf = 0; 
                 for(let i = 1; i < recent.length; i++) {
                     if(recent[i] === recent[i-1]) tt++;
                     else tf++;
@@ -457,7 +472,6 @@
                 let p_tt = tt / total;
                 let p_tf = tf / total;
                 if(p_tt === 0 || p_tf === 0) return 0;
-                // 香農熵值公式 (Shannon Entropy)
                 return -(p_tt * Math.log2(p_tt) + p_tf * Math.log2(p_tf));
             },
             detectPatterns: function(name, matrix, isDerived) {
@@ -546,7 +560,6 @@
                 const smallRoad = this.detectPatterns('小路', matSmall, true);
                 const roachRoad = this.detectPatterns('曱甴路', matRoach, true);
 
-                // 計算路單熱度
                 const heatBigRoad = this.getRoadHeat(records);
                 const heatBigEye = this.getRoadHeat(seqBigEye);
                 const heatSmall = this.getRoadHeat(seqSmall);
@@ -563,7 +576,6 @@
                     return { status: "waiting", recommendation: "等待數據累積...", action: "NONE", bet_amount: 0, cores_analysis: cores_analysis };
                 }
 
-                // 真正的探路映射
                 let simB_BigEye = this.simulateNext(records, 'B', 1);
                 let simB_Small = this.simulateNext(records, 'B', 2);
                 let simB_Roach = this.simulateNext(records, 'B', 3);
@@ -582,7 +594,6 @@
                 let smWeight = getMappedWeight(smallRoad, simB_Small, simP_Small);
                 let roWeight = getMappedWeight(roachRoad, simB_Roach, simP_Roach);
 
-                // 【套用熱度乘數】動態放大高準度路單，削弱爛路路單
                 let bigRoadB = bigRoad.weight.B * heatBigRoad.multiplier;
                 let bigRoadP = bigRoad.weight.P * heatBigRoad.multiplier;
                 let beB = beWeight.B * heatBigEye.multiplier;
@@ -592,27 +603,23 @@
                 let roB = roWeight.B * heatRoach.multiplier;
                 let roP = roWeight.P * heatRoach.multiplier;
 
-                // 計算分離莊閒總分
                 let totalB = baseWeight.B + bigRoadB + beB + smB + roB;
                 let totalP = baseWeight.P + bigRoadP + beP + smP + roP;
                 let totalConf = bigRoad.confidence + bigEyeBoy.confidence + smallRoad.confidence + roachRoad.confidence;
 
-                // ===== 【計算盤路熵值】爛路防禦機制 =====
                 let entropy = this.getEntropy(records);
                 let entropyMultiplier = 1.0;
                 let entropyWarning = "";
                 if (entropy > 0.95 && records.length > 15) {
-                    entropyMultiplier = 1.5; // 如果盤路極度混亂，要求 1.5倍 的過濾門檻才准下注
+                    entropyMultiplier = 1.5; 
                     entropyWarning = `<br><span style="font-size: 0.6em; color: var(--red-color);">⚠️ 盤路高熵混亂，防禦啟動</span>`;
                 }
 
-                // ===== 【計算莊閒勝率百分比對決】 =====
                 const totalWeightSum = totalB + totalP;
                 const pctB = totalWeightSum > 0 ? ((totalB / totalWeightSum) * 100).toFixed(1) : 50.0;
                 const pctP = totalWeightSum > 0 ? ((totalP / totalWeightSum) * 100).toFixed(1) : 50.0;
                 const vsText = `<span style="font-size: 0.75em; display:block; margin-top: 5px; color: var(--text-muted);">莊 ${pctB}% vs 閒 ${pctP}%</span>`;
 
-                // 動態門檻 (納入熵值防禦乘數)
                 let w = this.weightsConfig;
                 const maxPossibleWeight = w.dragon + w.jump + w.aligned + w.doubleJump + w.oneTwo + w.shortRoad + w.streakRule;
                 const diffThreshold = Math.max(10, maxPossibleWeight * 0.15) * entropyMultiplier; 
@@ -622,7 +629,6 @@
                 let action = "NONE";
                 let recommendation = "";
 
-                // 【雙重門檻過濾】
                 if (diff > diffThreshold && totalConf >= confThreshold) {
                     if (totalB > totalP) {
                         action = "B";
@@ -667,12 +673,16 @@
         }
 
         function addRecord(result) {
+            // 保存歷史快照。若未開啟分析模式，強制把注碼記為 0，避免觸發盈虧與✅❌
             state.history.push({
                 win: state.win, loss: state.loss, netProfit: state.netProfit,
                 consecutiveLosses: state.consecutiveLosses, fibIndex: state.fibIndex,
-                lastAiAction: state.lastAiAction, currentBetAmount: state.currentBetAmount
+                lastAiAction: state.isAnalyzing ? state.lastAiAction : 'NONE',
+                currentBetAmount: state.isAnalyzing ? state.currentBetAmount : 0
             });
-            if (state.lastAiAction !== 'NONE' && state.currentBetAmount > 0) {
+
+            // 只有在實戰下注模式下，才去對答案計算盈虧
+            if (state.isAnalyzing && state.lastAiAction !== 'NONE' && state.currentBetAmount > 0) {
                 if (result === 'T') {
                 } else if (result === state.lastAiAction) {
                     state.win++; state.netProfit += state.currentBetAmount;
@@ -682,8 +692,9 @@
                     state.consecutiveLosses++; state.fibIndex = Math.min(fibSequence.length - 1, state.fibIndex + 1);
                 }
             }
-            updateBankrollUI();
+
             state.records.push(result);
+            updateBankrollUI();
             renderBeadPlate();
             analyzeWithJS();
         }
@@ -699,10 +710,33 @@
                 else if (c === 'T' || c === '和') newRecords.push('T');
             }
             if (newRecords.length === 0) { alert("未偵測到有效的牌局數據"); return; }
-            state.records = newRecords;
-            state.history = []; state.netProfit = 0; state.win = 0; state.loss = 0;
+            
+            // 完全重置當前狀態
+            state.records = []; state.history = []; state.netProfit = 0; state.win = 0; state.loss = 0;
             state.lastAiAction = 'NONE'; state.currentBetAmount = 0; state.consecutiveLosses = 0; state.fibIndex = 0;
-            updateBankrollUI(); renderBeadPlate(); analyzeWithJS();
+            
+            // 強制切換為純觀察模式
+            state.isAnalyzing = false;
+            const btn = document.getElementById('btn-analyze');
+            if(btn) {
+                btn.innerHTML = '🎯 開始實戰下注';
+                btn.style.background = 'linear-gradient(135deg, #8b5cf6, #6d28d9)';
+                btn.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.4)';
+            }
+
+            // 直接將所有輸入資料作為無注碼歷史寫入
+            for (let res of newRecords) {
+                state.history.push({
+                    win: 0, loss: 0, netProfit: 0,
+                    consecutiveLosses: 0, fibIndex: 0,
+                    lastAiAction: 'NONE', currentBetAmount: 0
+                });
+                state.records.push(res);
+            }
+
+            updateBankrollUI(); 
+            renderBeadPlate(); 
+            analyzeWithJS(); 
             inputElement.value = '';
         }
 
@@ -787,22 +821,32 @@
             const strategy = document.getElementById('bet-strategy').value;
             state.lastAiAction = data.action || 'NONE';
             
-            if (state.lastAiAction === 'NONE') {
+            // 判斷是否為觀察模式
+            if (!state.isAnalyzing) {
                 state.currentBetAmount = 0;
             } else {
-                if (strategy === 'martingale') {
-                    state.currentBetAmount = baseBet * Math.pow(2, state.consecutiveLosses);
-                } else if (strategy === 'fibonacci') {
-                    state.currentBetAmount = baseBet * fibSequence[state.fibIndex];
+                if (state.lastAiAction === 'NONE') {
+                    state.currentBetAmount = 0;
                 } else {
-                    state.currentBetAmount = baseBet;
+                    if (strategy === 'martingale') {
+                        state.currentBetAmount = baseBet * Math.pow(2, state.consecutiveLosses);
+                    } else if (strategy === 'fibonacci') {
+                        state.currentBetAmount = baseBet * fibSequence[state.fibIndex];
+                    } else {
+                        state.currentBetAmount = baseBet;
+                    }
                 }
             }
 
             recommendUI.classList.remove('ai-thinking');
             
+            // 視覺化回饋：如果在觀察模式，加上文字提示
+            const modeWarning = !state.isAnalyzing 
+                ? "<span style='font-size: 0.6em; color: #94a3b8; display:block; margin-top:5px;'>✏️ 觀察輸入模式 (尚未點擊開始下注)</span>" 
+                : "";
+
             if (data.status === 'success') {
-                recommendUI.innerHTML = data.recommendation; 
+                recommendUI.innerHTML = data.recommendation + modeWarning; 
                 document.getElementById('bet-amount').innerText = `$${state.currentBetAmount}`;
                 if (data.action === 'B') {
                     recommendUI.style.color = 'var(--red-color)'; recommendUI.style.textShadow = '0 0 15px rgba(239, 68, 68, 0.6)';
@@ -812,7 +856,7 @@
                     recommendUI.style.color = 'var(--gold-color)'; recommendUI.style.textShadow = '0 0 15px rgba(251, 191, 36, 0.4)';
                 }
             } else {
-                recommendUI.innerHTML = data.recommendation;
+                recommendUI.innerHTML = data.recommendation + modeWarning;
                 recommendUI.style.color = 'var(--gold-color)'; recommendUI.style.textShadow = 'none';
                 document.getElementById('bet-amount').innerText = "$0";
             }
@@ -840,7 +884,6 @@
                         ? `<div style="margin-top:5px; font-size:0.75rem; color:#fbbf24; background:rgba(251,191,36,0.1); padding:2px; border-radius:4px;">${core.patterns.join(', ')}</div>` 
                         : `<div style="margin-top:5px; font-size:0.75rem; color:#475569;">無觸發特徵</div>`;
                     
-                    // 新增：動態熱度徽章 UI
                     let heatBadgeUI = core.heatText !== "分析中"
                         ? `<div style="position:absolute; top:-8px; right:-8px; background:${core.isHot ? 'linear-gradient(135deg, #ef4444, #b91c1c)' : '#334155'}; color:white; font-size:0.7rem; padding:2px 6px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.5); font-weight:bold; border: 1px solid rgba(255,255,255,0.2); z-index:10;">${core.isHot ? '🔥' : '🧊'} ${core.heatText}</div>`
                         : '';
@@ -949,8 +992,17 @@
 
             state.records = []; state.history = []; state.netProfit = 0; state.win = 0; state.loss = 0;
             state.lastAiAction = 'NONE'; state.currentBetAmount = 0; state.consecutiveLosses = 0; state.fibIndex = 0;
-            updateBankrollUI();
             
+            // 重置時切回預設狀態（關閉實戰分析模式）
+            state.isAnalyzing = false;
+            const btn = document.getElementById('btn-analyze');
+            if(btn) {
+                btn.innerHTML = '🎯 開始實戰下注';
+                btn.style.background = 'linear-gradient(135deg, #8b5cf6, #6d28d9)';
+                btn.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.4)';
+            }
+
+            updateBankrollUI();
             recommendUI.innerText = "等待數據累積...";
             recommendUI.style.color = "var(--gold-color)";
             document.getElementById('bet-amount').innerText = "$0";
