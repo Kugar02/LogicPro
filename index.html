@@ -695,7 +695,23 @@
                     if (res) {
                         let color = res === 'B' ? 'var(--red-color)' : (res === 'P' ? 'var(--blue-color)' : 'var(--green-color)');
                         let text = res === 'B' ? '莊' : (res === 'P' ? '閒' : '和');
-                        cellContent = `<div style="background-color: ${color}; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; margin: 0 auto; box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.5); text-shadow: 1px 1px 1px rgba(0,0,0,0.5);">${text}</div>`;
+                        
+                        // ===== 新增：預測結果 ✅ ❌ 標記 =====
+                        let badgeHtml = '';
+                        let pastState = state.history[index];
+                        // 確保當下這手牌，AI 有給出實質的下注建議 (非觀望)
+                        if (pastState && pastState.lastAiAction !== 'NONE' && pastState.currentBetAmount > 0) {
+                            if (res === pastState.lastAiAction) {
+                                // 預測成功 ✅
+                                badgeHtml = `<div style="position:absolute; bottom:-2px; right:-2px; font-size:10px; background:#fff; border-radius:50%; width:14px; height:14px; line-height:14px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.6);">✅</div>`;
+                            } else if (res !== 'T') {
+                                // 預測失敗 ❌ (開和局通常不視為失敗，因此排除 T)
+                                badgeHtml = `<div style="position:absolute; bottom:-2px; right:-2px; font-size:10px; background:#fff; border-radius:50%; width:14px; height:14px; line-height:14px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.6);">❌</div>`;
+                            }
+                        }
+                        
+                        // 結合原有的圓圈樣式與剛計算出來的標記
+                        cellContent = `<div style="position:relative; background-color: ${color}; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; margin: 0 auto; box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.5); text-shadow: 1px 1px 1px rgba(0,0,0,0.5);">${text}${badgeHtml}</div>`;
                     }
                     html += `<td>${cellContent}</td>`;
                 }
