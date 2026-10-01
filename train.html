@@ -170,7 +170,7 @@
             t.scrollTop = t.scrollHeight;
         }
 
-        // ==== 核心量化統計模型 ====
+        // ==== 核心量化統計模型 (已全面放寬判定條件，消除 0%) ====
         const QuantModel = {
             features: ["長龍", "單跳", "齊頭", "雙跳", "一房兩廳", "短路", "逢連"],
             stats: {},      // 訓練集單特徵
@@ -191,10 +191,10 @@
                 });
             },
             
-            // 掃描特徵函數 (已補上「一房兩廳」與「逢連」判定)
+            // 掃描特徵函數 (放寬條件)
             scanHand: function(records) {
                 let activeFeatures = [];
-                if(records.length < 5) return activeFeatures;
+                if(records.length < 4) return activeFeatures;
 
                 let recent = records.slice(-6);
                 let curLen = 1, prevLen = 0;
@@ -208,33 +208,33 @@
                     if(recent[i] !== recent[i-1]) rJumps++;
                 }
 
-                // 1. 長龍
-                if(curLen >= 3) {
+                // 1. 長龍 (放寬：>= 2)
+                if(curLen >= 2) {
                     activeFeatures.push({ name: "長龍", predict: records[records.length-1] });
                 }
-                // 2. 單跳
-                if(rJumps >= 4) {
+                // 2. 單跳 (放寬：>= 2)
+                if(rJumps >= 2) {
                     activeFeatures.push({ name: "單跳", predict: records[records.length-1] === 'B' ? 'P' : 'B' });
                 }
-                // 3. 齊頭
-                if(curLen === prevLen && curLen >= 2) {
+                // 3. 齊頭 (放寬：差值在 1 以內)
+                if(Math.abs(curLen - prevLen) <= 1 && curLen >= 1) {
                     activeFeatures.push({ name: "齊頭", predict: records[records.length-1] === 'B' ? 'P' : 'B' });
                 }
-                // 4. 雙跳
-                if(rJumps === 2 && curLen === 2 && prevLen === 2) {
+                // 4. 雙跳 (放寬)
+                if(rJumps >= 2 && curLen <= 3) {
                     activeFeatures.push({ name: "雙跳", predict: records[records.length-1] === 'B' ? 'P' : 'B' });
                 }
-                // 5. 短路
-                if(curLen <= 2 && prevLen <= 2 && records.length > 10) {
+                // 5. 短路 (放寬)
+                if(curLen <= 3 && prevLen <= 3) {
                     activeFeatures.push({ name: "短路", predict: records[records.length-1] === 'B' ? 'P' : 'B' });
                 }
-                // 6. 一房兩廳 (修復：補上判斷，例如最近結構呈現跳後連續雙排)
-                let isOneTwoRoom = (recent.length >= 5 && recent[recent.length-1] !== recent[recent.length-2] && recent[recent.length-2] === recent[recent.length-3]);
+                // 6. 一房兩廳 (放寬)
+                let isOneTwoRoom = (recent.length >= 4 && recent[recent.length-1] !== recent[recent.length-2]);
                 if(isOneTwoRoom) {
                     activeFeatures.push({ name: "一房兩廳", predict: records[records.length-1] === 'B' ? 'P' : 'B' });
                 }
-                // 7. 逢連 (修復：補上判斷，見跳後連續同路)
-                let isFengLian = (rJumps <= 1 && curLen >= 2);
+                // 7. 逢連 (放寬)
+                let isFengLian = (curLen >= 2);
                 if(isFengLian) {
                     activeFeatures.push({ name: "逢連", predict: records[records.length-1] });
                 }
@@ -285,7 +285,7 @@
                     let shoe = globalData[currentIndex].split('').filter(c => c==='B'||c==='P');
                     let isTrain = currentIndex < trainLimit;
 
-                    for(let handIdx = 5; handIdx < shoe.length - 1; handIdx++) {
+                    for(let handIdx = 4; handIdx < shoe.length - 1; handIdx++) {
                         let currentRecords = shoe.slice(0, handIdx);
                         let actualNext = shoe[handIdx];
                         let activeFeats = QuantModel.scanHand(currentRecords);
@@ -385,7 +385,7 @@
             let comboArr = [];
             for(let c in QuantModel.combos) {
                 let o = QuantModel.combos[c];
-                if(o.total > 100) comboArr.push({ name: c, wr: (o.wins/o.total)*100, tot: o.total });
+                if(o.total > 50) comboArr.push({ name: c, wr: (o.wins/o.total)*100, tot: o.total });
             }
             comboArr.sort((a,b) => b.wr - a.wr);
 
