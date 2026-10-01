@@ -6,48 +6,118 @@
     <title>Quantum AI | 全量化深度回測引擎</title>
     <style>
         :root {
-            --bg-main: #0B0E14; --panel-bg: rgba(26, 31, 43, 0.8);
-            --text-main: #e2e8f0; --text-muted: #94a3b8;
-            --accent-blue: #3b82f6; --accent-green: #10b981; --accent-red: #ef4444; --accent-gold: #fbbf24;
+            --bg-main: #0B0E14;
+            --panel-bg: rgba(26, 31, 43, 0.8);
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-gold: #fbbf24;
         }
         body {
-            background: #0B0E14; color: var(--text-main);
-            font-family: -apple-system, sans-serif; margin: 0; padding: 20px;
+            background: #0B0E14;
+            color: var(--text-main);
+            font-family: -apple-system, sans-serif;
+            margin: 0;
+            padding: 20px;
         }
-        .header { text-align: center; margin-bottom: 20px; }
-        .header h1 { color: var(--accent-blue); margin: 0 0 10px 0; text-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
-        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: var(--accent-blue);
+            margin: 0 0 10px 0;
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+        }
         .dashboard-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
         }
         .card {
-            background: var(--panel-bg); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            background: var(--panel-bg);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
-        .card h3 { margin: 0 0 10px 0; color: var(--accent-gold); font-size: 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;}
-        
-        .progress-container { background: #1e293b; border-radius: 8px; height: 24px; width: 100%; overflow: hidden; margin-bottom: 20px; position: relative; }
-        .progress-bar { background: linear-gradient(90deg, #3b82f6, #10b981); height: 100%; width: 0%; transition: width 0.1s; }
-        .progress-text { position: absolute; width: 100%; text-align: center; top: 2px; font-size: 0.85rem; font-weight: bold; text-shadow: 1px 1px 2px #000; }
-
+        .card h3 {
+            margin: 0 0 10px 0;
+            color: var(--accent-gold);
+            font-size: 1.1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 8px;
+        }
+        .progress-container {
+            background: #1e293b;
+            border-radius: 8px;
+            height: 24px;
+            width: 100%;
+            overflow: hidden;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .progress-bar {
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            height: 100%;
+            width: 0%;
+            transition: width 0.1s;
+        }
+        .progress-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            top: 2px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px #000;
+        }
         .terminal {
-            background: #0f172a; border: 1px solid #334155; border-radius: 8px;
-            padding: 15px; height: 250px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 0.9rem; line-height: 1.4;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 15px;
+            height: 250px;
+            overflow-y: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
         }
         .log-time { color: #64748b; margin-right: 10px; }
         .log-info { color: var(--text-main); }
         .log-success { color: var(--accent-green); }
         .log-warn { color: var(--accent-gold); }
         .log-error { color: var(--accent-red); }
-
         .btn-start {
-            display: block; width: 100%; padding: 15px; font-size: 1.2rem; font-weight: bold;
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; border-radius: 8px;
-            cursor: pointer; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
         }
-        .btn-start:disabled { background: #475569; cursor: not-allowed; box-shadow: none; }
-        
-        .stat-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.9rem; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 4px; }
+        .btn-start:disabled {
+            background: #475569;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+            border-bottom: 1px dashed rgba(255,255,255,0.05);
+            padding-bottom: 4px;
+        }
         .stat-val { font-weight: bold; color: var(--accent-green); }
     </style>
 </head>
@@ -88,266 +158,274 @@
         <div class="log-info"><span class="log-time">[System]</span> 系統就緒。請點擊上方按鈕開始抓取大數據並啟動運算引擎。</div>
     </div>
 
-<script>
-    function log(msg, type='info') {
-        const t = document.getElementById('terminal');
-        const time = new Date().toLocaleTimeString();
-        let colorClass = 'log-info';
-        if(type==='success') colorClass = 'log-success';
-        if(type==='warn') colorClass = 'log-warn';
-        if(type==='error') colorClass = 'log-error';
-        t.innerHTML += `<div><span class="log-time">[${time}]</span> <span class="${colorClass}">${msg}</span></div>`;
-        t.scrollTop = t.scrollHeight;
-    }
-
-    // ==== 核心量化統計模型 ====
-    const QuantModel = {
-        features: ["長龍", "單跳", "齊頭", "雙跳", "一房兩廳", "短路", "逢連"],
-        stats: {}, // 訓練集單特徵
-        testStats: {}, // 測試集單特徵
-        combos: {}, // 聯合特徵 (Train)
-        depthStats: { early: {}, mid: {}, late: {} }, // 深度 (Test)
-        risk: { balance: 10000, peak: 10000, mdd: 0, mddPct: 0, currentLossStreak: 0, maxLossStreak: 0, bets: 0, wins: 0 },
-        
-        init: function() {
-            this.features.forEach(f => {
-                this.stats[f] = { wins: 0, total: 0 };
-                this.testStats[f] = { wins: 0, total: 0 };
-                this.depthStats.early[f] = { wins: 0, total: 0 };
-                this.depthStats.mid[f] = { wins: 0, total: 0 };
-                this.depthStats.late[f] = { wins: 0, total: 0 };
-            });
-        },
-        
-        // 簡易矩陣與特徵掃描 (為了效能進行精簡)
-        scanHand: function(records, nextAction) {
-            let activeFeatures = [];
-            if(records.length < 5) return activeFeatures;
-            
-            // 由於在前端運算 300 萬手牌的完整下三路會非常耗時
-            // 這裡採用極速大路特徵近似演算法來代表特徵觸發
-            let recent = records.slice(-6);
-            let bCount = 0, pCount = 0;
-            let jumps = 0;
-            let curLen = 1, prevLen = 0;
-            
-            for(let i=1; i<records.length; i++) {
-                if(records[i] === records[i-1]) curLen++;
-                else { prevLen = curLen; curLen = 1; jumps++; }
-            }
-            let rJumps = 0;
-            for(let i=1; i<recent.length; i++) { if(recent[i] !== recent[i-1]) rJumps++; }
-
-            // 觸發判定 (極速版)
-            if(curLen >= 3) activeFeatures.push({ name: "長龍", predict: records[records.length-1] });
-            if(rJumps >= 4) activeFeatures.push({ name: "單跳", predict: records[records.length-1] === 'B' ? 'P' : 'B' });
-            if(curLen === prevLen && curLen >= 2) activeFeatures.push({ name: "齊頭", predict: records[records.length-1] === 'B' ? 'P' : 'B' });
-            if(rJumps === 2 && curLen === 2 && prevLen === 2) activeFeatures.push({ name: "雙跳", predict: records[records.length-1] === 'B' ? 'P' : 'B' });
-            if(curLen <= 2 && prevLen <= 2 && records.length > 10) activeFeatures.push({ name: "短路", predict: records[records.length-1] === 'B' ? 'P' : 'B' });
-
-            return activeFeatures;
+    <script>
+        function log(msg, type='info') {
+            const t = document.getElementById('terminal');
+            const time = new Date().toLocaleTimeString();
+            let colorClass = 'log-info';
+            if(type==='success') colorClass = 'log-success';
+            if(type==='warn') colorClass = 'log-warn';
+            if(type==='error') colorClass = 'log-error';
+            t.innerHTML += `<div><span class="log-time">[${time}]</span> <span class="${colorClass}">${msg}</span></div>`;
+            t.scrollTop = t.scrollHeight;
         }
-    };
 
-    let globalData = [];
-    
-    async function startEngine() {
-        document.getElementById('startBtn').disabled = true;
-        QuantModel.init();
-        
-        // 🚨 請確保這個 API 網址與你在主程式設定的一致！
-        const gasUrl = "https://script.google.com/macros/s/AKfycbwRoL5wgWJeSlnyhba2zUpPWZTqxjVDwEtJNhtNnycw6hppg2FkmCNqxCDm-IFcgH76/exec";
-        
-        log("🔄 正在連線 Google Drive 數據庫...");
-        try {
-            let res = await fetch(gasUrl);
-            let json = await res.json();
+        // ==== 核心量化統計模型 ====
+        const QuantModel = {
+            features: ["長龍", "單跳", "齊頭", "雙跳", "一房兩廳", "短路", "逢連"],
+            stats: {},      // 訓練集單特徵
+            testStats: {},  // 測試集單特徵
+            combos: {},     // 聯合特徵 (Train)
+            depthStats: { early: {}, mid: {}, late: {} }, // 深度 (Test)
+            risk: {
+                balance: 10000, peak: 10000, mdd: 0, mddPct: 0,
+                currentLossStreak: 0, maxLossStreak: 0, bets: 0, wins: 0
+            },
+            init: function() {
+                this.features.forEach(f => {
+                    this.stats[f] = { wins: 0, total: 0 };
+                    this.testStats[f] = { wins: 0, total: 0 };
+                    this.depthStats.early[f] = { wins: 0, total: 0 };
+                    this.depthStats.mid[f] = { wins: 0, total: 0 };
+                    this.depthStats.late[f] = { wins: 0, total: 0 };
+                });
+            },
             
-            // 彈性讀取變數名稱 (自動兼容 data, history, 或 records)
-            let records = json.data || json.history || json.records;
+            // 掃描特徵函數 (已補上「一房兩廳」與「逢連」判定)
+            scanHand: function(records) {
+                let activeFeatures = [];
+                if(records.length < 5) return activeFeatures;
 
-            if(json.status === "success" && records && records.length > 0) {
-                globalData = records;
-                log(`✅ 成功載入 ${globalData.length} 靴歷史數據 (約 ${globalData.length * 75} 手牌)`, "success");
-                processDataChunks();
-            } else {
-                log("⚠️ 資料庫為空！如果是格式錯誤，系統回傳值為: " + JSON.stringify(json), "warn");
+                let recent = records.slice(-6);
+                let curLen = 1, prevLen = 0;
+                for(let i=1; i<records.length; i++) {
+                    if(records[i] === records[i-1]) curLen++;
+                    else { prevLen = curLen; curLen = 1; }
+                }
+
+                let rJumps = 0;
+                for(let i=1; i<recent.length; i++) {
+                    if(recent[i] !== recent[i-1]) rJumps++;
+                }
+
+                // 1. 長龍
+                if(curLen >= 3) {
+                    activeFeatures.push({ name: "長龍", predict: records[records.length-1] });
+                }
+                // 2. 單跳
+                if(rJumps >= 4) {
+                    activeFeatures.push({ name: "單跳", predict: records[records.length-1] === 'B' ? 'P' : 'B' });
+                }
+                // 3. 齊頭
+                if(curLen === prevLen && curLen >= 2) {
+                    activeFeatures.push({ name: "齊頭", predict: records[records.length-1] === 'B' ? 'P' : 'B' });
+                }
+                // 4. 雙跳
+                if(rJumps === 2 && curLen === 2 && prevLen === 2) {
+                    activeFeatures.push({ name: "雙跳", predict: records[records.length-1] === 'B' ? 'P' : 'B' });
+                }
+                // 5. 短路
+                if(curLen <= 2 && prevLen <= 2 && records.length > 10) {
+                    activeFeatures.push({ name: "短路", predict: records[records.length-1] === 'B' ? 'P' : 'B' });
+                }
+                // 6. 一房兩廳 (修復：補上判斷，例如最近結構呈現跳後連續雙排)
+                let isOneTwoRoom = (recent.length >= 5 && recent[recent.length-1] !== recent[recent.length-2] && recent[recent.length-2] === recent[recent.length-3]);
+                if(isOneTwoRoom) {
+                    activeFeatures.push({ name: "一房兩廳", predict: records[records.length-1] === 'B' ? 'P' : 'B' });
+                }
+                // 7. 逢連 (修復：補上判斷，見跳後連續同路)
+                let isFengLian = (rJumps <= 1 && curLen >= 2);
+                if(isFengLian) {
+                    activeFeatures.push({ name: "逢連", predict: records[records.length-1] });
+                }
+
+                return activeFeatures;
+            }
+        };
+
+        let globalData = [];
+
+        async function startEngine() {
+            document.getElementById('startBtn').disabled = true;
+            QuantModel.init();
+            
+            const gasUrl = "https://script.google.com/macros/s/AKfycbwRoL5wgWJeSlnyhba2zUpPWZTqxjVDwEtJNhtNnycw6hppg2FkmCNqxCDm-IFcgH76/exec";
+            log("🔄 正在連線 Google Drive 數據庫...");
+
+            try {
+                let res = await fetch(gasUrl);
+                let json = await res.json();
+                let records = json.data || json.history || json.records;
+                
+                if(json.status === "success" && records && records.length > 0) {
+                    globalData = records;
+                    log(`✅ 成功載入 ${globalData.length} 靴歷史數據 (約 ${globalData.length * 75} 手牌)`, "success");
+                    processDataChunks();
+                } else {
+                    log("⚠️ 資料庫為空！回傳值: " + JSON.stringify(json), "warn");
+                    document.getElementById('startBtn').disabled = false;
+                }
+            } catch(e) {
+                log("❌ 連線失敗: " + e.message, "error");
                 document.getElementById('startBtn').disabled = false;
             }
-        } catch(e) {
-            log("❌ 連線失敗: " + e.message, "error");
-            document.getElementById('startBtn').disabled = false;
         }
-    }
 
-    // ==== 非同步分塊運算 (防瀏覽器當機) ====
-    function processDataChunks() {
-        let totalShoes = globalData.length;
-        let trainLimit = Math.floor(totalShoes * 0.8); // 80% Train, 20% Test
-        let currentIndex = 0;
-        
-        log("🚀 開始執行非同步深度回測 (切割訓練集與盲測集)...");
+        // ==== 非同步分塊運算 ====
+        function processDataChunks() {
+            let totalShoes = globalData.length;
+            let trainLimit = Math.floor(totalShoes * 0.8);
+            let currentIndex = 0;
 
-        function chunk() {
-            let end = Math.min(currentIndex + 500, totalShoes); // 每次處理 500 靴
-            
-            for(; currentIndex < end; currentIndex++) {
-                let shoe = globalData[currentIndex].split('').filter(c => c==='B'||c==='P');
-                let isTrain = currentIndex < trainLimit;
-                
-                for(let handIdx = 5; handIdx < shoe.length - 1; handIdx++) {
-                    let currentRecords = shoe.slice(0, handIdx);
-                    let actualNext = shoe[handIdx];
-                    
-                    let activeFeats = QuantModel.scanHand(currentRecords);
-                    if(activeFeats.length === 0) continue;
+            log("🚀 正在執行非同步深度回測 (切割訓練集與盲測集)...");
 
-                    // 單一特徵紀錄
-                    activeFeats.forEach(f => {
-                        let isWin = (f.predict === actualNext);
-                        
-                        if(isTrain) {
-                            QuantModel.stats[f.name].total++;
-                            if(isWin) QuantModel.stats[f.name].wins++;
-                        } else {
-                            // 盲測集 (Test)
-                            QuantModel.testStats[f.name].total++;
-                            if(isWin) QuantModel.testStats[f.name].wins++;
-                            
-                            // 深度分析 (Option 4)
-                            let depth = handIdx < 25 ? 'early' : (handIdx < 50 ? 'mid' : 'late');
-                            QuantModel.depthStats[depth][f.name].total++;
-                            if(isWin) QuantModel.depthStats[depth][f.name].wins++;
-                            
-                            // 資金風險模擬 (Option 3) 平注 $100
-                            QuantModel.risk.bets++;
-                            if(isWin) {
-                                QuantModel.risk.wins++;
-                                QuantModel.risk.balance += 100;
-                                QuantModel.risk.currentLossStreak = 0;
-                                if(QuantModel.risk.balance > QuantModel.risk.peak) QuantModel.risk.peak = QuantModel.risk.balance;
+            function chunk() {
+                let end = Math.min(currentIndex + 500, totalShoes);
+                for(; currentIndex < end; currentIndex++) {
+                    let shoe = globalData[currentIndex].split('').filter(c => c==='B'||c==='P');
+                    let isTrain = currentIndex < trainLimit;
+
+                    for(let handIdx = 5; handIdx < shoe.length - 1; handIdx++) {
+                        let currentRecords = shoe.slice(0, handIdx);
+                        let actualNext = shoe[handIdx];
+                        let activeFeats = QuantModel.scanHand(currentRecords);
+
+                        if(activeFeats.length === 0) continue;
+
+                        activeFeats.forEach(f => {
+                            let isWin = (f.predict === actualNext);
+                            if(isTrain) {
+                                QuantModel.stats[f.name].total++;
+                                if(isWin) QuantModel.stats[f.name].wins++;
                             } else {
-                                QuantModel.risk.balance -= 100;
-                                QuantModel.risk.currentLossStreak++;
-                                if(QuantModel.risk.currentLossStreak > QuantModel.risk.maxLossStreak) {
-                                    QuantModel.risk.maxLossStreak = QuantModel.risk.currentLossStreak;
-                                }
-                                let dd = QuantModel.risk.peak - QuantModel.risk.balance;
-                                let ddPct = (dd / QuantModel.risk.peak) * 100;
-                                if(dd > QuantModel.risk.mdd) {
-                                    QuantModel.risk.mdd = dd;
-                                    QuantModel.risk.mddPct = ddPct;
+                                QuantModel.testStats[f.name].total++;
+                                if(isWin) QuantModel.testStats[f.name].wins++;
+
+                                let depth = handIdx < 25 ? 'early' : (handIdx < 50 ? 'mid' : 'late');
+                                QuantModel.depthStats[depth][f.name].total++;
+                                if(isWin) QuantModel.depthStats[depth][f.name].wins++;
+
+                                QuantModel.risk.bets++;
+                                if(isWin) {
+                                    QuantModel.risk.wins++;
+                                    QuantModel.risk.balance += 100;
+                                    QuantModel.risk.currentLossStreak = 0;
+                                    if(QuantModel.risk.balance > QuantModel.risk.peak) QuantModel.risk.peak = QuantModel.risk.balance;
+                                } else {
+                                    QuantModel.risk.balance -= 100;
+                                    QuantModel.risk.currentLossStreak++;
+                                    if(QuantModel.risk.currentLossStreak > QuantModel.risk.maxLossStreak) {
+                                        QuantModel.risk.maxLossStreak = QuantModel.risk.currentLossStreak;
+                                    }
+                                    let dd = QuantModel.risk.peak - QuantModel.risk.balance;
+                                    let ddPct = (dd / QuantModel.risk.peak) * 100;
+                                    if(dd > QuantModel.risk.mdd) {
+                                        QuantModel.risk.mdd = dd;
+                                        QuantModel.risk.mddPct = ddPct;
+                                    }
                                 }
                             }
-                        }
-                    });
+                        });
 
-                    // 聯合特徵紀錄 (Option 1) - 僅在 Train 執行
-                    if(isTrain && activeFeats.length >= 2) {
-                        for(let i=0; i<activeFeats.length; i++) {
-                            for(let j=i+1; j<activeFeats.length; j++) {
-                                let f1 = activeFeats[i].name;
-                                let f2 = activeFeats[j].name;
-                                let comboName = `${f1} + ${f2}`;
-                                if(!QuantModel.combos[comboName]) QuantModel.combos[comboName] = {wins:0, total:0};
-                                QuantModel.combos[comboName].total++;
-                                // 只有當兩者預測方向一致且獲勝時才算 Combo Win
-                                if(activeFeats[i].predict === activeFeats[j].predict && activeFeats[i].predict === actualNext) {
-                                    QuantModel.combos[comboName].wins++;
+                        if(isTrain && activeFeats.length >= 2) {
+                            for(let i=0; i<activeFeats.length; i++) {
+                                for(let j=i+1; j<activeFeats.length; j++) {
+                                    let f1 = activeFeats[i].name;
+                                    let f2 = activeFeats[j].name;
+                                    let comboName = `${f1} + ${f2}`;
+                                    if(!QuantModel.combos[comboName]) QuantModel.combos[comboName] = {wins:0, total:0};
+                                    QuantModel.combos[comboName].total++;
+                                    if(activeFeats[i].predict === activeFeats[j].predict && activeFeats[i].predict === actualNext) {
+                                        QuantModel.combos[comboName].wins++;
+                                    }
                                 }
                             }
                         }
                     }
                 }
+
+                let pct = Math.round((currentIndex / totalShoes) * 100);
+                document.getElementById('progressBar').style.width = pct + '%';
+                document.getElementById('progressText').innerText = `運算中... ${pct}% (${currentIndex}/${totalShoes} 靴)`;
+
+                if(currentIndex < totalShoes) {
+                    requestAnimationFrame(chunk);
+                } else {
+                    finalizeBacktest();
+                }
             }
+            requestAnimationFrame(chunk);
+        }
 
-            // 更新進度條
-            let pct = Math.round((currentIndex / totalShoes) * 100);
-            document.getElementById('progressBar').style.width = pct + '%';
-            document.getElementById('progressText').innerText = `運算中... ${pct}% (${currentIndex}/${totalShoes} 靴)`;
+        function finalizeBacktest() {
+            log("✅ 運算完畢！正在生成量化報告...", "success");
 
-            if(currentIndex < totalShoes) {
-                requestAnimationFrame(chunk); // 不卡死瀏覽器
-            } else {
-                finalizeBacktest();
+            let trainHTML = "";
+            let finalWeights = {};
+
+            for(let f in QuantModel.stats) {
+                let tr = QuantModel.stats[f];
+                let te = QuantModel.testStats[f];
+                let trPct = tr.total > 0 ? ((tr.wins/tr.total)*100).toFixed(1) : 0;
+                let tePct = te.total > 0 ? ((te.wins/te.total)*100).toFixed(1) : 0;
+
+                let keyMap = { "長龍": "dragon", "單跳": "jump", "齊頭": "aligned", "雙跳": "doubleJump", "一房兩廳": "oneTwo", "短路": "shortRoad", "逢連": "streakRule" };
+                let wKey = keyMap[f] || f;
+                let newW = tePct > 50 ? Math.round((tePct - 50) * 2) : 5;
+                finalWeights[wKey] = newW;
+
+                trainHTML += `
+                    <div class="stat-row">
+                        <span>${f}</span>
+                        <span class="stat-val" style="color: ${tePct>=52?'#10b981':'#ef4444'}">訓 ${trPct}% | 盲 ${tePct}%</span>
+                    </div>`;
             }
+            document.getElementById('train-content').innerHTML = trainHTML;
+
+            let comboArr = [];
+            for(let c in QuantModel.combos) {
+                let o = QuantModel.combos[c];
+                if(o.total > 100) comboArr.push({ name: c, wr: (o.wins/o.total)*100, tot: o.total });
+            }
+            comboArr.sort((a,b) => b.wr - a.wr);
+
+            let comboHTML = "";
+            comboArr.slice(0, 5).forEach(c => {
+                comboHTML += `<div class="stat-row"><span>${c.name}</span><span class="stat-val" style="color:#fbbf24">${c.wr.toFixed(1)}%</span></div>`;
+            });
+            document.getElementById('combo-content').innerHTML = comboHTML || "樣本不足";
+
+            let r = QuantModel.risk;
+            let roi = ((r.balance - 10000)/10000*100).toFixed(1);
+            document.getElementById('risk-content').innerHTML = `
+                <div class="stat-row"><span>起始本金</span><span style="color:#fff">$10,000</span></div>
+                <div class="stat-row"><span>最終餘額 (平注盲測)</span><span class="stat-val">$${r.balance}</span></div>
+                <div class="stat-row"><span>總淨報率 (ROI)</span><span class="stat-val" style="color:${roi>=0?'#10b981':'#ef4444'}">${roi}%</span></div>
+                <div class="stat-row"><span>最大回撤 (MDD)</span><span style="color:#ef4444">-$${r.mdd} (${r.mddPct.toFixed(1)}%)</span></div>
+                <div class="stat-row"><span>最長連敗次數</span><span style="color:#ef4444">${r.maxLossStreak} 局</span></div>
+            `;
+
+            let depthHTML = `<div style="display:flex; justify-content:space-between; color:#fff; margin-bottom:5px;"><span>特徵</span><span>初段</span><span>中段</span><span>尾段</span></div>`;
+            ["長龍", "單跳", "短路", "一房兩廳", "逢連"].forEach(f => {
+                let ew = QuantModel.depthStats.early[f].total > 0 ? (QuantModel.depthStats.early[f].wins/QuantModel.depthStats.early[f].total*100).toFixed(1) : 0;
+                let mw = QuantModel.depthStats.mid[f].total > 0 ? (QuantModel.depthStats.mid[f].wins/QuantModel.depthStats.mid[f].total*100).toFixed(1) : 0;
+                let lw = QuantModel.depthStats.late[f].total > 0 ? (QuantModel.depthStats.late[f].wins/QuantModel.depthStats.late[f].total*100).toFixed(1) : 0;
+                depthHTML += `
+                    <div class="stat-row">
+                        <span style="width:70px">${f}</span>
+                        <span style="color:#94a3b8">${ew}%</span>
+                        <span style="color:#94a3b8">${mw}%</span>
+                        <span style="color:#94a3b8">${lw}%</span>
+                    </div>`;
+            });
+            document.getElementById('depth-content').innerHTML = depthHTML;
+
+            localStorage.setItem('quantum_ai_weights', JSON.stringify(finalWeights));
+            log("💾 已根據【盲測數據】提取最新安全權重並寫入系統緩存。", "success");
+            log("👉 回測完成！請直接切換回主程式網頁 (index.html) 並重新整理，AI 即會套用全量化模型！", "warn");
+            document.getElementById('progressText').innerText = "✅ 深度量化分析完成";
+            document.getElementById('startBtn').disabled = false;
         }
-        
-        requestAnimationFrame(chunk);
-    }
-
-    function finalizeBacktest() {
-        log("✅ 運算完畢！正在生成量化報告...", "success");
-        
-        // --- 方案二：樣本外驗證 UI ---
-        let trainHTML = "";
-        let finalWeights = {};
-        for(let f in QuantModel.stats) {
-            let tr = QuantModel.stats[f];
-            let te = QuantModel.testStats[f];
-            let trPct = tr.total > 0 ? ((tr.wins/tr.total)*100).toFixed(1) : 0;
-            let tePct = te.total > 0 ? ((te.wins/te.total)*100).toFixed(1) : 0;
-            
-            // 權重演化：以盲測勝率為準，50%基礎上每多1%給2分
-            let newW = tePct > 50 ? Math.round((tePct - 50) * 2) : 5;
-            finalWeights[f === "長龍" ? "dragon" : f === "單跳" ? "jump" : f === "齊頭" ? "aligned" : f === "雙跳" ? "doubleJump" : f === "一房兩廳" ? "oneTwo" : f === "短路" ? "shortRoad" : "streakRule"] = newW;
-
-            trainHTML += `
-                <div class="stat-row">
-                    <span>${f}</span>
-                    <span class="stat-val" style="color: ${tePct>=52?'#10b981':'#ef4444'}">訓 ${trPct}% | 盲 ${tePct}%</span>
-                </div>`;
-        }
-        document.getElementById('train-content').innerHTML = trainHTML;
-
-        // --- 方案一：黃金聯合特徵 UI ---
-        let comboArr = [];
-        for(let c in QuantModel.combos) {
-            let o = QuantModel.combos[c];
-            if(o.total > 100) comboArr.push({ name: c, wr: (o.wins/o.total)*100, tot: o.total });
-        }
-        comboArr.sort((a,b) => b.wr - a.wr);
-        let comboHTML = "";
-        comboArr.slice(0, 5).forEach(c => {
-            comboHTML += `<div class="stat-row"><span>${c.name}</span><span class="stat-val" style="color:#fbbf24">${c.wr.toFixed(1)}%</span></div>`;
-        });
-        document.getElementById('combo-content').innerHTML = comboHTML || "樣本不足";
-
-        // --- 方案三：資金風險 UI ---
-        let r = QuantModel.risk;
-        let roi = ((r.balance - 10000)/10000*100).toFixed(1);
-        document.getElementById('risk-content').innerHTML = `
-            <div class="stat-row"><span>起始本金</span><span style="color:#fff">$10,000</span></div>
-            <div class="stat-row"><span>最終餘額 (平注盲測)</span><span class="stat-val">$${r.balance}</span></div>
-            <div class="stat-row"><span>總淨報率 (ROI)</span><span class="stat-val" style="color:${roi>=0?'#10b981':'#ef4444'}">${roi}%</span></div>
-            <div class="stat-row"><span>最大回撤 (MDD)</span><span style="color:#ef4444">-$${r.mdd} (${r.mddPct.toFixed(1)}%)</span></div>
-            <div class="stat-row"><span>最長連敗次數</span><span style="color:#ef4444">${r.maxLossStreak} 局</span></div>
-        `;
-
-        // --- 方案四：牌局深度 UI ---
-        let depthHTML = `<div style="display:flex; justify-content:space-between; color:#fff; margin-bottom:5px;"><span>特徵</span><span>初段</span><span>中段</span><span>尾段</span></div>`;
-        ["長龍", "單跳", "短路"].forEach(f => {
-            let ew = QuantModel.depthStats.early[f].total > 0 ? (QuantModel.depthStats.early[f].wins/QuantModel.depthStats.early[f].total*100).toFixed(1) : 0;
-            let mw = QuantModel.depthStats.mid[f].total > 0 ? (QuantModel.depthStats.mid[f].wins/QuantModel.depthStats.mid[f].total*100).toFixed(1) : 0;
-            let lw = QuantModel.depthStats.late[f].total > 0 ? (QuantModel.depthStats.late[f].wins/QuantModel.depthStats.late[f].total*100).toFixed(1) : 0;
-            depthHTML += `
-                <div class="stat-row">
-                    <span style="width:50px">${f}</span>
-                    <span style="color:#94a3b8">${ew}%</span>
-                    <span style="color:#94a3b8">${mw}%</span>
-                    <span style="color:#94a3b8">${lw}%</span>
-                </div>`;
-        });
-        document.getElementById('depth-content').innerHTML = depthHTML;
-
-        // 儲存權重並提示
-        localStorage.setItem('quantum_ai_weights', JSON.stringify(finalWeights));
-        log("💾 已根據【盲測數據】提取最新安全權重並寫入系統緩存。", "success");
-        log("👉 回測完成！請直接切換回主程式網頁 (index.html) 並重新整理，AI 即會套用全量化模型！", "warn");
-        
-        document.getElementById('progressText').innerText = "✅ 深度量化分析完成";
-        document.getElementById('startBtn').disabled = false;
-    }
-</script>
+    </script>
 </body>
 </html>
